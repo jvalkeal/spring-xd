@@ -1,6 +1,6 @@
-#! /bin/sh
+#!/bin/bash
 
-source xdapi
+. xdapi
 
 PWD=`pwd`
 # Base path in HDFS

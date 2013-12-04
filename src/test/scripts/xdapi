@@ -3,10 +3,15 @@ XD_HOST='http://localhost'
 XD_PORT=9393
 XDURL="$XD_HOST:$XD_PORT"
 
-alias xdc='curl -s -S -H "Accept: application/json"'
 # This is needed because the CI agents don't have an up-to-date version of curl which
 # supports the --data-urlencode parameter
-alias urlencode='python -c "import sys, urllib as ul; print ul.quote_plus(sys.argv[1])"'
+xdc() {
+  curl -s -S -H "Accept: application/json" $@
+}
+
+urlencode() {
+  python -c "import sys, urllib as ul; print ul.quote_plus(sys.argv[1])" "$@"
+}
 
 create_stream() {
   local udef=`urlencode "$2"`

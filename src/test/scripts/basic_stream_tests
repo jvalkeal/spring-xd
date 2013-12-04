@@ -1,6 +1,6 @@
-#! /bin/sh
+#!/bin/bash
 
-source xdapi
+. xdapi
 
 rm -R /tmp/xdtest/basic &> /dev/null
 set -e
