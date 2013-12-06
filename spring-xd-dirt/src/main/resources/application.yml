@@ -14,6 +14,7 @@ endpoints:
 
 XD_ANALYTICS: ${analytics:redis}
 XD_TRANSPORT: ${transport:redis}
+XD_CONTROL_TRANSPORT: ${controlTransport:${XD_TRANSPORT}}
 XD_STORE: ${store:redis}
 XD_HOME: ${xdHomeDir:..}
 XD_JMX_ENABLED: ${jmxEnabled:false}
@@ -89,4 +90,24 @@ spring:
 transport: local
 store: memory
 analytics: memory
+
+---
+# Redis properties
+# (vcap.services.* binds to a service called 'redis' in Pivotal CF)
+spring:
+ data:
+  redis:
+   port: 6379
+   host: localhost
+
+---
+# RabbitMQ properties
+# (vcap.services.* binds to a service called 'rabbitmq' in Pivotal CF)
+spring:
+  rabbitmq:
+   host: ${vcap.services.rabbitmq.credentials.hostname:localhost}
+   port: ${vcap.services.rabbitmq.credentials.port:5672}
+   username: ${vcap.services.rabbitmq.credentials.username:guest}
+   password: ${vcap.services.rabbitmq.credentials.password:guest}
+   virtual_host: ${vcap.services.rabbitmq.credentials.vhost:/}
 

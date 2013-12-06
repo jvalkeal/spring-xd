@@ -42,8 +42,8 @@ public class ModuleCommandTests extends AbstractStreamIntegrationTest {
 	@Test
 	public void testListAll() throws InterruptedException {
 		Table t = listAll();
-		assertTrue("cron-trigger source is not present in module list command",
-				t.getRows().contains(new TableRow().addValue(1, "cron-trigger").addValue(2, "source")));
+		assertTrue("trigger source is not present in module list command",
+				t.getRows().contains(new TableRow().addValue(1, "trigger").addValue(2, "source")));
 		assertTrue("file source is not present in module list command",
 				t.getRows().contains(new TableRow().addValue(1, "file").addValue(2, "source")));
 		assertTrue("splitter processor is not present in module list command",
@@ -55,7 +55,7 @@ public class ModuleCommandTests extends AbstractStreamIntegrationTest {
 	@Test
 	public void testListForSource() throws InterruptedException {
 		Table t = listByType("source");
-		assertTrue(t.getRows().contains(new TableRow().addValue(1, "cron-trigger").addValue(2, "source")));
+		assertTrue(t.getRows().contains(new TableRow().addValue(1, "trigger").addValue(2, "source")));
 		assertFalse(t.getRows().contains(new TableRow().addValue(1, "splunk").addValue(2, "sink")));
 	}
 

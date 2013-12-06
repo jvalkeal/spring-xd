@@ -18,6 +18,10 @@ package org.springframework.xd.module;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,6 +29,8 @@ import java.util.regex.Pattern;
 import org.springframework.core.io.DescriptiveResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
+import org.springframework.xd.module.options.DefaultModuleOptionsMetadata;
 import org.springframework.xd.module.options.ModuleOption;
 import org.springframework.xd.module.options.ModuleOptionsMetadata;
 import org.springframework.xd.module.options.PojoModuleOptionsMetadata;
@@ -34,13 +40,14 @@ import org.springframework.xd.module.options.SimpleModuleOptionsMetadata;
  * Defines a module.
  * 
  * @author Gary Russell
- * 
+ * @author Eric Bottard
+ * @author Mark Pollack
  */
 public class ModuleDefinition {
 
-	private final String name;
+	private volatile String name;
 
-	private final ModuleType type;
+	private volatile ModuleType type;
 
 	private final Resource resource;
 
@@ -48,9 +55,21 @@ public class ModuleDefinition {
 
 	private volatile String definition;
 
-	private final URL[] classpath;
+	private volatile URL[] classpath;
 
-	private ModuleOptionsMetadata moduleOptionsMetadata;
+	private volatile ModuleOptionsMetadata moduleOptionsMetadata;
+
+	/**
+	 * If a composed module, the list of modules
+	 */
+	private List<ModuleDefinition> composedModuleDefinitions = new ArrayList<ModuleDefinition>();
+
+	@SuppressWarnings("unused")
+	private ModuleDefinition() {
+		// no arg constructor for Jackson serialization
+		// JSON serialization ignores the resource, so set it here to a value.
+		resource = new DescriptiveResource("Dummy resource");
+	}
 
 	public ModuleDefinition(String name, ModuleType moduleType) {
 		this(name, moduleType, new DescriptiveResource("Dummy resource"));
@@ -68,6 +87,29 @@ public class ModuleDefinition {
 		this.name = name;
 		this.type = type;
 		this.classpath = classpath != null && classpath.length > 0 ? classpath : null;
+	}
+
+	/**
+	 * Determine if this a composed module
+	 * 
+	 * @return true if this is a composed module, false otherwise.
+	 */
+	public boolean isComposed() {
+		return !CollectionUtils.isEmpty(this.composedModuleDefinitions);
+	}
+
+	/**
+	 * Set the list of composed modules if this is a composite module, can not be null
+	 * 
+	 * @param composedModuleDefinitions list of composed modules
+	 */
+	public void setComposedModuleDefinitions(List<ModuleDefinition> composedModuleDefinitions) {
+		Assert.notNull(composedModuleDefinitions, "composedModuleDefinitions cannot be null");
+		this.composedModuleDefinitions = composedModuleDefinitions;
+	}
+
+	public List<ModuleDefinition> getComposedModuleDefinitions() {
+		return composedModuleDefinitions;
 	}
 
 	public String getName() {
@@ -141,6 +183,8 @@ public class ModuleDefinition {
 	 */
 	private static class ModuleOptionsMetadataResolver {
 
+		private static final Map<String, Class<?>> SHORT_CLASSNAMES = new HashMap<String, Class<?>>();
+
 		private static final Pattern DESCRIPTION_KEY_PATTERN = Pattern.compile("^options\\.([a-zA-Z\\-_0-9]+)\\.description$");
 
 		/**
@@ -149,12 +193,26 @@ public class ModuleDefinition {
 		 */
 		private static final String OPTIONS_CLASS = "options_class";
 
+		static {
+			SHORT_CLASSNAMES.put("String", String.class);
+			SHORT_CLASSNAMES.put("boolean", boolean.class);
+			SHORT_CLASSNAMES.put("Boolean", Boolean.class);
+			SHORT_CLASSNAMES.put("int", int.class);
+			SHORT_CLASSNAMES.put("Integer", Integer.class);
+			SHORT_CLASSNAMES.put("long", long.class);
+			SHORT_CLASSNAMES.put("Long", Long.class);
+			SHORT_CLASSNAMES.put("float", float.class);
+			SHORT_CLASSNAMES.put("Float", Float.class);
+			SHORT_CLASSNAMES.put("double", double.class);
+			SHORT_CLASSNAMES.put("Double", Double.class);
+		}
+
 		public static ModuleOptionsMetadata create(ModuleDefinition definition) {
 			try {
 				Resource propertiesResource = definition.getResource().createRelative(
 						definition.getName() + ".properties");
 				if (!propertiesResource.exists()) {
-					return null;
+					return new DefaultModuleOptionsMetadata();
 				}
 				else {
 					Properties props = new Properties();
@@ -178,7 +236,7 @@ public class ModuleDefinition {
 				}
 			}
 			catch (IOException e) {
-				return null;
+				return new DefaultModuleOptionsMetadata();
 			}
 
 		}
@@ -198,12 +256,18 @@ public class ModuleDefinition {
 					String type = props.getProperty(String.format("options.%s.type", optionName));
 					Class<?> clazz = null;
 					if (type != null) {
-						try {
-							clazz = Class.forName(type);
+						if (SHORT_CLASSNAMES.containsKey(type)) {
+							clazz = SHORT_CLASSNAMES.get(type);
 						}
-						catch (ClassNotFoundException e) {
-							throw new IllegalStateException("Can't find class used for type of option '" + optionName
-									+ "': " + type);
+						else {
+							try {
+								clazz = Class.forName(type);
+							}
+							catch (ClassNotFoundException e) {
+								throw new IllegalStateException("Can't find class used for type of option '"
+										+ optionName
+										+ "': " + type);
+							}
 						}
 					}
 					ModuleOption moduleOption = new ModuleOption(optionName, description).withDefaultValue(

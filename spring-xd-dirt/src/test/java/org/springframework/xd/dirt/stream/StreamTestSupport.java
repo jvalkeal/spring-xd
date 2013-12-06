@@ -52,10 +52,12 @@ public class StreamTestSupport {
 
 	private static SingleNodeApplication application;
 
+	private static ConfigurableApplicationContext adminContext;
+
 	@BeforeClass
 	public static void startXDSingleNode() throws Exception {
-		application = new SingleNodeApplication().run("--spring.profiles.active=memory");
-		ConfigurableApplicationContext adminContext = application.getAdminContext();
+		application = new SingleNodeApplication().run("--spring.profiles.active=memory,hsqldb");
+		adminContext = application.getAdminContext();
 		ConfigurableApplicationContext containerContext = application.getContainerContext();
 		ResourceModuleRegistry cp = new ResourceModuleRegistry("classpath:/testmodules/");
 		DelegatingModuleRegistry cmr1 = containerContext.getBean(DelegatingModuleRegistry.class);
@@ -85,6 +87,10 @@ public class StreamTestSupport {
 
 	protected static void undeployStream(String name) {
 		streamDeployer.undeploy(name);
+	}
+
+	protected static void deleteStream(String name) {
+		streamDeployer.delete(name);
 	}
 
 	protected static Module getDeployedModule(String streamName, int index) {
@@ -125,6 +131,10 @@ public class StreamTestSupport {
 			sink = modules.get(modules.size() - 1);
 		}
 		return sink.getComponent("input", SubscribableChannel.class);
+	}
+
+	protected static ConfigurableApplicationContext getAdminContext() {
+		return adminContext;
 	}
 
 	protected static ModuleDefinitionRepository getModuleDefinitionRepository() {

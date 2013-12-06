@@ -23,12 +23,23 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * Holds configuration options that are valid for the Container node, when using distributed mode.
  * 
  * @author Eric Bottard
+ * @author David Turanski
  */
 @ConfigurationProperties
 public class ContainerOptions extends CommonDistributedOptions {
 
-	// TBD, see XD-707
 	public static enum DataTransport {
+		rabbit, redis
+	}
+
+	private DataTransport transport;
+
+	public void setXD_TRANSPORT(DataTransport transport) {
+		this.transport = transport;
+	}
+
+	public DataTransport getXD_TRANSPORT() {
+		return this.transport;
 	}
 
 

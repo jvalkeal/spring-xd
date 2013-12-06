@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -36,7 +37,6 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.env.EnumerablePropertySource;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
@@ -55,6 +55,8 @@ import org.springframework.xd.module.ModuleType;
 import org.springframework.xd.module.ParentLastURLClassLoader;
 import org.springframework.xd.module.Plugin;
 import org.springframework.xd.module.SimpleModule;
+import org.springframework.xd.module.options.DefaultModuleOptionsMetadata;
+import org.springframework.xd.module.options.ModuleOptions;
 import org.springframework.xd.module.options.ModuleOptionsMetadata;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -179,7 +181,10 @@ public class ModuleDeployer extends AbstractMessageHandler implements Applicatio
 					+ request.getModule(), i);
 			ClassLoader classLoader = (definition.getClasspath() == null) ? null
 					: new ParentLastURLClassLoader(definition.getClasspath(), parentClassLoader);
-			SimpleModule module = new SimpleModule(definition, submoduleMetadata, classLoader);
+
+			DefaultModuleOptionsMetadata moduleOptionsMetadata = new DefaultModuleOptionsMetadata();
+			ModuleOptions subModuleOptions = safeModuleOptionsInterpolate(moduleOptionsMetadata, paramList.get(i));
+			SimpleModule module = new SimpleModule(definition, submoduleMetadata, classLoader, subModuleOptions);
 
 			Properties props = new Properties();
 			props.putAll(paramList.get(i));
@@ -191,7 +196,18 @@ public class ModuleDeployer extends AbstractMessageHandler implements Applicatio
 			modules.add(module);
 		}
 		CompositeModule module = new CompositeModule(request.getModule(), request.getType(), modules, metadata);
-		bindOptionsAndDeployModule(module, request);
+		deployAndStore(module, request);
+	}
+
+	private ModuleOptions safeModuleOptionsInterpolate(ModuleOptionsMetadata moduleOptionsMetadata,
+			Map<String, String> values) {
+		try {
+			return moduleOptionsMetadata.interpolate(values);
+		}
+		catch (BindException e) {
+			// Can't happen as parser should have already validated options
+			throw new IllegalStateException(e);
+		}
 	}
 
 	private void handleSingleModuleMessage(ModuleDeploymentRequest request) {
@@ -219,48 +235,17 @@ public class ModuleDeployer extends AbstractMessageHandler implements Applicatio
 		ClassLoader classLoader = (definition.getClasspath() == null) ? null
 				: new ParentLastURLClassLoader(definition.getClasspath(), parentClassLoader);
 
-		Module module = new SimpleModule(definition, metadata, classLoader);
-		this.bindOptionsAndDeployModule(module, request);
+
+		Map<String, String> parameters = request.getParameters();
+		ModuleOptionsMetadata moduleOptionsMetadata = definition.getModuleOptionsMetadata();
+		ModuleOptions interpolated = safeModuleOptionsInterpolate(moduleOptionsMetadata, parameters);
+		Module module = new SimpleModule(definition, metadata, classLoader, interpolated);
+		this.deployAndStore(module, request);
 	}
 
-	private void bindOptionsAndDeployModule(Module module, ModuleDeploymentRequest request) {
+	private void deployAndStore(Module module, ModuleDeploymentRequest request) {
 		module.setParentContext(this.commonContext);
-		Map<String, String> parameters = request.getParameters();
-
-
-		ModuleDefinition definition = moduleDefinitionRepository.findByNameAndType(module.getName(), module.getType());
-		ModuleOptionsMetadata moduleOptionsMetadata = definition.getModuleOptionsMetadata();
-		if (moduleOptionsMetadata != null) {
-			EnumerablePropertySource<?> propertySource;
-			try {
-				propertySource = moduleOptionsMetadata.interpolate(
-						parameters).asPropertySource();
-			}
-			catch (BindException e) {
-				// Should not happen as parser has already validated options
-				throw new IllegalStateException("Invalid options provided for module", e);
-			}
-			// Go back to the java.util.Properties world for now
-			Properties props = new Properties();
-			for (String key : propertySource.getPropertyNames()) {
-				Object value = propertySource.getProperty(key);
-				if (value != null) {
-					props.setProperty(key, "" + value);
-				}
-			}
-			module.addProperties(props);
-		}
-		else {
-			Properties parametersAsProps = new Properties();
-			if (!CollectionUtils.isEmpty(parameters)) {
-				parametersAsProps.putAll(parameters);
-			}
-			module.addProperties(parametersAsProps);
-		}
-
-
-		this.doDeploy(module);
-
+		this.deploy(module);
 		if (logger.isInfoEnabled()) {
 			logger.info("deployed " + module.toString());
 		}
@@ -268,7 +253,7 @@ public class ModuleDeployer extends AbstractMessageHandler implements Applicatio
 		this.deployedModules.get(request.getGroup()).put(request.getIndex(), module);
 	}
 
-	private void doDeploy(Module module) {
+	private void deploy(Module module) {
 		this.preProcessModule(module);
 		module.initialize();
 		this.postProcessModule(module);

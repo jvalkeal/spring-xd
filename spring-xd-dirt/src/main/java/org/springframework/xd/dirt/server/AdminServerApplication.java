@@ -22,7 +22,7 @@ import org.springframework.xd.dirt.container.XDContainer;
 import org.springframework.xd.dirt.rest.RestConfiguration;
 import org.springframework.xd.dirt.server.options.AdminOptions;
 import org.springframework.xd.dirt.util.BannerUtils;
-import org.springframework.xd.dirt.util.XdInitializer;
+import org.springframework.xd.dirt.util.XdConfigLoggingInitializer;
 
 @Configuration
 @EnableAutoConfiguration
@@ -32,6 +32,8 @@ import org.springframework.xd.dirt.util.XdInitializer;
 public class AdminServerApplication {
 
 	public static final String ADMIN_PROFILE = "adminServer";
+
+	public static final String HSQL_PROFILE = "hsqldb";
 
 	private ConfigurableApplicationContext context;
 
@@ -59,7 +61,7 @@ public class AdminServerApplication {
 
 	@Bean
 	public ApplicationListener<?> xdInitializer(ApplicationContext context) {
-		XdInitializer delegate = new XdInitializer();
+		XdConfigLoggingInitializer delegate = new XdConfigLoggingInitializer(false);
 		delegate.setEnvironment(context.getEnvironment());
 		return new SourceFilteringListener(context, delegate);
 	}
