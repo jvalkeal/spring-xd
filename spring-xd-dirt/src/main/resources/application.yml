@@ -67,6 +67,42 @@ spring:
 ---
 
 spring:
+  yarn:
+    applicationDir: /xd/yarn/
+    appName: xdapp
+    fsUri: hdfs://localhost:8020
+    rmAddress: localhost:8032
+    schedulerAddress: localhost:8030
+    client:
+      appmasterJar: spring-xd-@application.version@-yarnapp.zip
+      runnerClazz: org.springframework.xd.dirt.server.AdminServerApplication
+      classpath:
+        - "./spring-xd-@application.version@-yarnapp.zip/lib/*"
+        - "./spring-xd-@application.version@-yarnapp.zip/modules/processor/scripts"
+        - "./spring-xd-@application.version@-yarnapp.zip/config"
+        - "./spring-xd-@application.version@-yarnapp.zip"
+      files:
+        - "file:../../yarn/spring-xd-@application.version@-yarnapp.zip"
+      arguments:
+        - "-Dspring.application.name=admin"
+        - "-Dlogging.config=file:./spring-xd-@application.version@-yarnapp.zip/config/xd-admin-logger.properties"
+        - "-DPORT=0"
+        - "-Dxd.home=./spring-xd-@application.version@-yarnapp.zip"
+    appmaster:
+      containerCount: 1
+      containerJar: spring-xd-@application.version@-yarnapp.zip
+      appmasterClazz: org.springframework.xd.yarn.app.xd.appmaster.XdYarnAppmaster
+      containerRunner: org.springframework.xd.dirt.server.LauncherApplication
+      waitLatch: false
+      classpath:
+        - "./spring-xd-@application.version@-yarnapp.zip/lib/*"
+        - "./spring-xd-@application.version@-yarnapp.zip/modules/processor/scripts"
+        - "./spring-xd-@application.version@-yarnapp.zip/config"
+        - "./spring-xd-@application.version@-yarnapp.zip"
+
+---
+
+spring:
   profiles: node
   batch:
     initializer:
