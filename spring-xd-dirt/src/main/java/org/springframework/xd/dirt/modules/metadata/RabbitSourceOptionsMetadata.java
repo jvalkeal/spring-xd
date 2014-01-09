@@ -16,82 +16,17 @@
 
 package org.springframework.xd.dirt.modules.metadata;
 
-import javax.validation.constraints.Size;
-
+import org.springframework.http.MediaType;
 import org.springframework.xd.module.options.spi.ModuleOption;
-import org.springframework.xd.module.options.spi.SourceModuleOptionsMetadataSupport;
 
 /**
  * Describes options to the {@code rabbit} source module.
  * 
  * @author Eric Bottard
  */
-public class RabbitSourceOptionsMetadata extends SourceModuleOptionsMetadataSupport {
-
-	private String host;
-
-	// Using wrapper here b/c default comes from properties file for now
-	private Integer port;
-
-	private String vhost;
+public class RabbitSourceOptionsMetadata extends AbstractRabbitConnectionOptionsMetadata {
 
 	private String queues;
-
-	private String username;
-
-	private String password;
-
-
-	public String getUsername() {
-		return username;
-	}
-
-	@ModuleOption("the username to use to connect to the broker")
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-
-	public String getPassword() {
-		return password;
-	}
-
-	@ModuleOption("the password to use to connect to the broker")
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-	@Size
-	public String getHost() {
-		return host;
-	}
-
-	@ModuleOption("the host (or IP Address) to connect to")
-	public void setHost(String host) {
-		this.host = host;
-	}
-
-
-	public Integer getPort() {
-		return port;
-	}
-
-	@ModuleOption("the port to connect to")
-	public void setPort(int port) {
-		this.port = port;
-	}
-
-
-	public String getVhost() {
-		return vhost;
-	}
-
-
-	@ModuleOption("the RabbitMQ virtual host to use")
-	public void setVhost(String vhost) {
-		this.vhost = vhost;
-	}
-
 
 	public String getQueues() {
 		return queues;
@@ -101,6 +36,21 @@ public class RabbitSourceOptionsMetadata extends SourceModuleOptionsMetadataSupp
 	@ModuleOption("the queue(s) from which messages will be received")
 	public void setQueues(String queues) {
 		this.queues = queues;
+	}
+
+
+	// Adding those back as we can't inherit from multiple classes.
+	// Will go away when XD-1050 is done
+	private MediaType outputType;
+
+	public MediaType getOutputType() {
+		return outputType;
+	}
+
+
+	@ModuleOption("how this module should emit messages it produces")
+	public void setOutputType(MediaType outputType) {
+		this.outputType = outputType;
 	}
 
 

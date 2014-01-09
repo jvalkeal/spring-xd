@@ -47,17 +47,18 @@ import org.springframework.xd.dirt.container.XDContainer;
 import org.springframework.xd.dirt.event.ModuleDeployedEvent;
 import org.springframework.xd.dirt.event.ModuleUndeployedEvent;
 import org.springframework.xd.dirt.plugins.job.JobPlugin;
-import org.springframework.xd.module.CompositeModule;
 import org.springframework.xd.module.DeploymentMetadata;
-import org.springframework.xd.module.Module;
 import org.springframework.xd.module.ModuleDefinition;
 import org.springframework.xd.module.ModuleType;
-import org.springframework.xd.module.ParentLastURLClassLoader;
-import org.springframework.xd.module.Plugin;
-import org.springframework.xd.module.SimpleModule;
+import org.springframework.xd.module.core.CompositeModule;
+import org.springframework.xd.module.core.Module;
+import org.springframework.xd.module.core.Plugin;
+import org.springframework.xd.module.core.SimpleModule;
 import org.springframework.xd.module.options.DefaultModuleOptionsMetadata;
 import org.springframework.xd.module.options.ModuleOptions;
 import org.springframework.xd.module.options.ModuleOptionsMetadata;
+import org.springframework.xd.module.options.ModuleOptionsMetadataResolver;
+import org.springframework.xd.module.support.ParentLastURLClassLoader;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -90,9 +91,14 @@ public class ModuleDeployer extends AbstractMessageHandler implements Applicatio
 
 	private ClassLoader parentClassLoader;
 
-	public ModuleDeployer(ModuleDefinitionRepository moduleDefinitionRepository) {
+	private final ModuleOptionsMetadataResolver moduleOptionsMetadataResolver;
+
+	public ModuleDeployer(ModuleDefinitionRepository moduleDefinitionRepository,
+			ModuleOptionsMetadataResolver moduleOptionsMetadataResolver) {
 		Assert.notNull(moduleDefinitionRepository, "moduleDefinitionRepository must not be null");
+		Assert.notNull(moduleOptionsMetadataResolver, "moduleOptionsMetadataResolver must not be null");
 		this.moduleDefinitionRepository = moduleDefinitionRepository;
+		this.moduleOptionsMetadataResolver = moduleOptionsMetadataResolver;
 	}
 
 	public Map<String, Map<Integer, Module>> getDeployedModules() {
@@ -237,7 +243,7 @@ public class ModuleDeployer extends AbstractMessageHandler implements Applicatio
 
 
 		Map<String, String> parameters = request.getParameters();
-		ModuleOptionsMetadata moduleOptionsMetadata = definition.getModuleOptionsMetadata();
+		ModuleOptionsMetadata moduleOptionsMetadata = moduleOptionsMetadataResolver.resolve(definition);
 		ModuleOptions interpolated = safeModuleOptionsInterpolate(moduleOptionsMetadata, parameters);
 		Module module = new SimpleModule(definition, metadata, classLoader, interpolated);
 		this.deployAndStore(module, request);

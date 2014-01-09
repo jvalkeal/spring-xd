@@ -9,7 +9,7 @@
 		http://www.springframework.org/schema/hadoop http://www.springframework.org/schema/hadoop/spring-hadoop.xsd
 		http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd">
 
-	<context:property-placeholder location="${xd.config.home}/${configProperties:batch-jdbc-import}.properties" ignore-resource-not-found="true"/>
+	<context:property-placeholder location="${xd.config.home}/${configProperties:batch-jdbc}.properties" ignore-resource-not-found="true"/>
 
 	<batch:job id="job" restartable="${restartable:false}">
 		<batch:step id="fileHdfsStep">
@@ -42,10 +42,10 @@
 				</property>
 			</bean>
 		</property>
-		<property name="baseFilename" value="${filename:${xd.stream.name}}"/>
+		<property name="baseFilename" value="${fileName:${xd.stream.name}}"/>
 		<property name="rolloverThresholdInBytes" value="${rollover:1000000}"/>
-		<property name="basePath" value="${basePath:/data/}"/>
-		<property name="fileSuffix" value="${suffix:log}"/>
+		<property name="basePath" value="${directory:/xd/${xd.stream.name}}/"/>
+		<property name="fileSuffix" value="${fileExtension:csv}"/>
 	</bean>
 
 	<bean id="hadoopFs" class="org.springframework.data.hadoop.fs.FileSystemFactoryBean">

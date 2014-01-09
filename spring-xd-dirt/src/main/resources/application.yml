@@ -68,7 +68,7 @@ spring:
 
 spring:
   yarn:
-    applicationDir: /xd/yarn/
+    applicationDir: /xd/
     appName: xdapp
     fsUri: hdfs://localhost:8020
     rmAddress: localhost:8032

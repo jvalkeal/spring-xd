@@ -28,13 +28,16 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
-import org.springframework.xd.module.Module;
 import org.springframework.xd.module.ModuleType;
-import org.springframework.xd.module.Plugin;
+import org.springframework.xd.module.core.Module;
+import org.springframework.xd.module.core.Plugin;
+import org.springframework.xd.module.options.DefaultModuleOptionsMetadataResolver;
+import org.springframework.xd.module.options.ModuleOptionsMetadataResolver;
 
 
 /**
@@ -53,6 +56,11 @@ public class ModuleDeployerTests {
 		"META-INF/spring-xd/internal/container.xml",
 		"META-INF/spring-xd/store/${XD_STORE}-store.xml" })
 	protected static class ModuleDeployerTestsConfiguration {
+
+		@Bean
+		public ModuleOptionsMetadataResolver moduleOptionsMetadataResolver() {
+			return new DefaultModuleOptionsMetadataResolver();
+		}
 	}
 
 	@Before

@@ -32,10 +32,10 @@ import org.springframework.integration.x.bus.MessageBus;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.xd.dirt.container.XDContainer;
-import org.springframework.xd.module.AbstractPlugin;
 import org.springframework.xd.module.DeploymentMetadata;
-import org.springframework.xd.module.Module;
 import org.springframework.xd.module.ModuleType;
+import org.springframework.xd.module.core.AbstractPlugin;
+import org.springframework.xd.module.core.Module;
 
 /**
  * Plugin to enable the registration of jobs in a central registry.
@@ -82,13 +82,13 @@ public class JobPlugin extends AbstractPlugin {
 	public void configureProperties(Module module) {
 		final Properties properties = new Properties();
 		properties.setProperty("xd.stream.name", module.getDeploymentMetadata().getGroup());
-		if (!module.getProperties().contains(DATE_FORMAT)) {
+		if (!module.getProperties().containsKey(DATE_FORMAT)) {
 			properties.setProperty(DATE_FORMAT, "");
 		}
-		if (!module.getProperties().contains(NUMBER_FORMAT)) {
+		if (!module.getProperties().containsKey(NUMBER_FORMAT)) {
 			properties.setProperty(NUMBER_FORMAT, "");
 		}
-		if (!module.getProperties().contains(MAKE_UNIQUE)) {
+		if (!module.getProperties().containsKey(MAKE_UNIQUE)) {
 			properties.setProperty(MAKE_UNIQUE, String.valueOf(Boolean.TRUE));
 		}
 		if (logger.isInfoEnabled()) {
@@ -110,7 +110,8 @@ public class JobPlugin extends AbstractPlugin {
 			}
 			MessageChannel notificationsChannel = module.getComponent(JOB_NOTIFICATIONS_CHANNEL, MessageChannel.class);
 			if (notificationsChannel != null) {
-				bus.bindProducer(md.getGroup() + NOTIFICATION_CHANNEL_SUFFIX, notificationsChannel, true);
+				bus.bindProducer(JOB_CHANNEL_PREFIX + md.getGroup() + NOTIFICATION_CHANNEL_SUFFIX,
+						notificationsChannel, true);
 			}
 		}
 	}

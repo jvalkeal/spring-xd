@@ -1,7 +1,7 @@
 #!/bin/bash
 
 . xdapi
-
+#If this the first time you are running this script, please run the install_sqlite_jar and restart the XD Server
 PWD=`pwd`
 TEST_DIR='/tmp/xdtest/jdbc'
 DB_FILE="$TEST_DIR/jdbc.db"
@@ -38,7 +38,7 @@ assert_equals 'x' $col1
 
 echo -e "\n\n Test 2. tail | jdbc stream with db initialization"
 
-create_stream jdbc2 "tail --lines=10 --name=$TEST_DIR/jdbc2.data --fileDelay=1000 | jdbc --driverClass=org.sqlite.JDBC --username='' --password='' --url=jdbc:sqlite:$DB_FILE"
+create_stream jdbc2 "tail --lines=10 --name=$TEST_DIR/jdbc2.data --fileDelay=1000 | jdbc --driverClass=org.sqlite.JDBC --username='' --password='' --url=jdbc:sqlite:$DB_FILE --initializeDatabase=true"
 
 echo "blahblah" >> $TEST_DIR/jdbc2.data
 sleep 3
@@ -50,5 +50,29 @@ rows=`sqlite3 $DB_FILE 'select count(*) from jdbc2'`
 assert_equals 1 $rows
 payload=`sqlite3 $DB_FILE 'select payload from jdbc2'`
 assert_equals 'blahblah' $payload
+
+echo -e "\n\n Test 3. Load single CSV file using filejdbc job with defaults\n"
+
+create_job csvjdbcjob0 "filejdbc --driverClass=org.sqlite.JDBC --url=jdbc:sqlite:$DB_FILE --names=col1,col2,col3 --resources=file://$PWD/csv/data.csv --initializeDatabase=true"
+launch_job csvjdbcjob0
+sleep 5
+rows=`sqlite3 $DB_FILE 'select count(*) from csvjdbcjob0'`
+destroy_job csvjdbcjob0
+echo "Checking row count in database table matches import from file..."
+assert_equals 292 $rows
+
+echo -e "\n\n Test 4. Load multiple CSV files using filejdbc jobs with table name specified\n"
+
+create_job csvjdbcjob1 "filejdbc --driverClass=org.sqlite.JDBC --url=jdbc:sqlite:$DB_FILE --names=col1,col2,col3 --resources=file://$PWD/csv/data.csv --tableName=JOB_TABLE --initializeDatabase=true"
+launch_job csvjdbcjob1
+sleep 5
+destroy_job csvjdbcjob1
+create_job csvjdbcjob2 "filejdbc --driverClass=org.sqlite.JDBC --url=jdbc:sqlite:$DB_FILE --names=col1,col2,col3 --resources=file://$PWD/csv/data.csv --tableName=JOB_TABLE --initializeDatabase=false"
+launch_job csvjdbcjob2
+sleep 5
+destroy_job csvjdbcjob2
+rows=`sqlite3 $DB_FILE 'select count(*) from JOB_TABLE'`
+echo "Checking row count in database table matches import from file..."
+assert_equals 584 $rows
 
 echo -e '\nAll good :-)'

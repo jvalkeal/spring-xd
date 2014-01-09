@@ -16,10 +16,7 @@
 
 package org.springframework.xd.dirt.modules.metadata;
 
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-
-import org.hibernate.validator.constraints.NotBlank;
 
 import org.springframework.xd.module.options.spi.ModuleOption;
 import org.springframework.xd.module.options.spi.SourceModuleOptionsMetadataSupport;
@@ -54,8 +51,6 @@ public class MqttSourceOptionsMetadata extends SourceModuleOptionsMetadataSuppor
 		this.clientId = clientId;
 	}
 
-	@NotNull
-	@NotBlank
 	public String getUrl() {
 		return url;
 	}
@@ -65,7 +60,6 @@ public class MqttSourceOptionsMetadata extends SourceModuleOptionsMetadataSuppor
 		this.url = url;
 	}
 
-	@NotBlank
 	public String getTopics() {
 		return topics;
 	}

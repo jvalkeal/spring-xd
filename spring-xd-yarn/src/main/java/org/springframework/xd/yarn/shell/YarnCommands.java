@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.xd.shell.hadoop;
+package org.springframework.xd.yarn.shell;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -34,6 +34,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.xd.shell.hadoop.ConfigurationAware;
 import org.springframework.xd.shell.util.Table;
 import org.springframework.xd.shell.util.TableHeader;
 import org.springframework.xd.shell.util.TableRow;

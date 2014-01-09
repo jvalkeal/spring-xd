@@ -64,12 +64,15 @@ public class ModulesController {
 
 	private ModuleDefinitionResourceAssembler moduleDefinitionResourceAssembler = new ModuleDefinitionResourceAssembler();
 
-	private final DetailedModuleDefinitionResourceAssembler detailedAssembler = new DetailedModuleDefinitionResourceAssembler();
+	private final DetailedModuleDefinitionResourceAssembler detailedAssembler;
 
 	@Autowired
-	public ModulesController(CompositeModuleDefinitionService compositeModuleDefinitionService) {
+	public ModulesController(CompositeModuleDefinitionService compositeModuleDefinitionService,
+			DetailedModuleDefinitionResourceAssembler detailedAssembler) {
 		Assert.notNull(compositeModuleDefinitionService, "compositeModuleDefinitionService must not be null");
+		Assert.notNull(detailedAssembler, "detailedAssembler must not be null");
 		this.compositeModuleDefinitionService = compositeModuleDefinitionService;
+		this.detailedAssembler = detailedAssembler;
 	}
 
 	/**

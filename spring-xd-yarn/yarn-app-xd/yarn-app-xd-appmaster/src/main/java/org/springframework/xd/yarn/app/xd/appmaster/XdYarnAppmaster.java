@@ -46,8 +46,6 @@ import org.springframework.yarn.support.NetworkUtils;
  * @author Janne Valkealahti
  * 
  */
-// @EnableConfigurationProperties({ SpringYarnProperties.class, SpringYarnClientProperties.class,
-// SpringYarnEnvProperties.class })
 public class XdYarnAppmaster extends StaticAppmaster implements ApplicationListener<ApplicationEvent> {
 
 	private final static Log log = LogFactory.getLog(XdYarnAppmaster.class);
@@ -102,6 +100,8 @@ public class XdYarnAppmaster extends StaticAppmaster implements ApplicationListe
 					new UrlAppmasterTrackService("http://" + NetworkUtils.getDefaultAddress() + ":" + port));
 		}
 
+		// TODO: should guard that CommandLineRunner have done
+		// its job, otherwise appmaster is not fully initialized
 		super.submitApplication();
 
 		if (poller != null) {
