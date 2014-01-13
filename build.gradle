@@ -12,7 +12,7 @@ buildscript {
 	dependencies {
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:0.5.0.M7")
 		classpath("org.springframework.build.gradle:propdeps-plugin:0.0.3")
-		classpath("org.springframework.build.gradle:docbook-reference-plugin:0.2.7-SNAPSHOT")
+		classpath("org.springframework.build.gradle:docbook-reference-plugin:0.2.8")
 		classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.7.0'
 		classpath 'org.ajoberstar:gradle-git:0.4.0'
 		classpath 'me.champeau.gradle:gradle-javadoc-hotfix-plugin:0.1'
@@ -560,7 +560,9 @@ project('spring-xd-extension-mongodb') {
 	dependencies {
 		compile project(':spring-xd-tuple')
 		compile "org.springframework.batch:spring-batch-core:$springBatchVersion"
-		compile "org.springframework.data:spring-data-mongodb:$springDataMongoVersion"
+		compile ("org.springframework.data:spring-data-mongodb:$springDataMongoVersion") {
+			exclude group: 'org.slf4j'
+		}
 	}
 }
 
@@ -1546,14 +1548,11 @@ task asciidoctorHtml(type: AsciidoctorTask, dependsOn: [pullDocs, ':spring-xd-sh
 
 apply plugin: 'docbook-reference'
 
-ext {
-	expandPlaceholders = ""; //For Gradle Reference Plugin
-}
-
 reference {
 	sourceFileName = 'index.xml'
 	sourceDir = file("$buildDir/docbook")
 	pdfFilename = 'spring-xd-reference.pdf'
+	expandPlaceholders = ''
 }
 
 reference.dependsOn asciidoctorDocbook
