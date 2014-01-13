@@ -1318,6 +1318,7 @@ project('spring-xd-yarn') {
 		}
 		compile project(':spring-xd-yarn:yarn-app-xd:yarn-app-xd-client')
 		compile "org.springframework.data:spring-yarn-boot:$springDataHadoopVersion-hadoop22"
+		compile "org.springframework.data:spring-yarn-boot-client:$springDataHadoopVersion-hadoop22"
 	}
 }
 
@@ -1358,10 +1359,26 @@ project('spring-xd-yarn:yarn-app-xd:yarn-app-xd-appmaster') {
 	}
 }
 
-task copyYarnInstall(type: Copy, dependsOn: ":spring-xd-yarn:yarn-app-xd:yarn-app-xd-appmaster:copyToLib") {
+project('spring-xd-yarn:yarn-app-xd:yarn-app-xd-container') {
+	description = 'Spring Yarn XD App Container'
+	dependencies {
+		compile project(':spring-xd-yarn:yarn-app-xd')
+		compile "org.springframework.data:spring-yarn-boot:$springDataHadoopVersion-hadoop22"
+		compile "org.springframework:spring-web:$springVersion"
+	}
+	task copyToLib(dependsOn: build, type: Copy) {
+		into "$buildDir/lib"
+		from configurations.runtime.allArtifacts.files
+	}
+}
+
+task copyYarnInstall(type: Copy, dependsOn: [":spring-xd-yarn:yarn-app-xd:yarn-app-xd-appmaster:copyToLib","spring-xd-yarn:yarn-app-xd:yarn-app-xd-container:copyToLib"]) {
 	from("$rootDir/spring-xd-yarn/yarn-app-xd/yarn-app-xd-appmaster/build") {
 		include 'lib/yarn-app-xd-*jar'
 		include 'lib/spring-yarn-*jar'
+	}
+	from("$rootDir/spring-xd-yarn/yarn-app-xd/yarn-app-xd-container/build") {
+		include 'lib/yarn-app-xd-*jar'
 	}
 	from("$rootDir/spring-xd-dirt/build/install/spring-xd-dirt") {
 		include 'lib/*jar'

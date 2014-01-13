@@ -16,16 +16,15 @@
 
 package org.springframework.xd.yarn.shell;
 
-import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Properties;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
-import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 
-import org.springframework.shell.core.ExecutionProcessor;
 import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
@@ -34,13 +33,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.xd.shell.hadoop.ConfigurationAware;
 import org.springframework.xd.shell.util.Table;
-import org.springframework.xd.shell.util.TableHeader;
-import org.springframework.xd.shell.util.TableRow;
 import org.springframework.xd.yarn.app.xd.client.XdClientApplication;
 import org.springframework.yarn.client.YarnClient;
-import org.springframework.yarn.client.YarnClientFactoryBean;
 
 /**
  * Shell integration providing control commands for Spring XD on Hadoop Yarn.
@@ -56,9 +51,9 @@ import org.springframework.yarn.client.YarnClientFactoryBean;
  * 
  */
 @Component
-public class YarnCommands extends ConfigurationAware implements ExecutionProcessor {
+public class YarnXdCommands extends YarnCommandsSupport {
 
-	private static final String PREFIX = "yarn ";
+	private static final String PREFIX = "yarn xd ";
 
 	private static final String COMMAND_LIST = PREFIX + "list";
 
@@ -87,6 +82,11 @@ public class YarnCommands extends ConfigurationAware implements ExecutionProcess
 		return true;
 	}
 
+	@Override
+	protected boolean propertiesChanged() throws Exception {
+		return true;
+	}
+
 	@CliAvailabilityIndicator({ COMMAND_LIST, COMMAND_SUBMIT, COMMAND_KILL })
 	public boolean available() {
 		// we have yarn if YarnConfiguration class can be found
@@ -98,14 +98,14 @@ public class YarnCommands extends ConfigurationAware implements ExecutionProcess
 		invocationContext = super.beforeInvocation(invocationContext);
 		String defaultNameKey = (String) ReflectionUtils.getField(
 				ReflectionUtils.findField(FileSystem.class, "FS_DEFAULT_NAME_KEY"), null);
-		String fs = getHadoopConfiguration().get(defaultNameKey);
-		String hdrm = getHadoopConfiguration().get("yarn.resourcemanager.address");
+		String fs = getConfiguration().get(defaultNameKey);
+		String hdrm = getConfiguration().get("yarn.resourcemanager.address");
 
 		if (StringUtils.hasText(fs) && StringUtils.hasText(hdrm)) {
 			return invocationContext;
 		}
 		else {
-			LOG.severe("You must set fs URL and rm address before running yarn commands");
+			log.error("You must set fs URL and rm address before running yarn commands");
 			throw new RuntimeException("You must set fs URL and rm address before running yarn commands");
 		}
 	}
@@ -174,69 +174,35 @@ public class YarnCommands extends ConfigurationAware implements ExecutionProcess
 	public Table list(
 			@CliOption(key = "verbose", help = HELP_LIST_VERBOSE, unspecifiedDefaultValue = "false", specifiedDefaultValue = "true") boolean verbose)
 			throws Exception {
-		Table table = new Table();
-		table.addHeader(1, new TableHeader("Id"))
-				.addHeader(2, new TableHeader("User"))
-				.addHeader(3, new TableHeader("Name"))
-				.addHeader(4, new TableHeader("Queue"))
-				.addHeader(5, new TableHeader("Type"))
-				.addHeader(6, new TableHeader("StartTime"))
-				.addHeader(7, new TableHeader("FinishTime"))
-				.addHeader(8, new TableHeader("State"))
-				.addHeader(9, new TableHeader("FinalStatus"))
-				.addHeader(10, new TableHeader("XD Admin"));
-
-		for (ApplicationReport a : getYarnClient().listApplications()) {
-
-			String xdAdminUrl = "";
-			if (a.getYarnApplicationState() == YarnApplicationState.RUNNING) {
-				xdAdminUrl = a.getOriginalTrackingUrl();
-			}
-
-			YarnApplicationState applicationState = a.getYarnApplicationState();
-			if (verbose
-					|| (applicationState != YarnApplicationState.FAILED
-							&& applicationState != YarnApplicationState.FINISHED
-							&& applicationState != YarnApplicationState.KILLED)) {
-				final TableRow row = new TableRow();
-				row.addValue(1, a.getApplicationId().toString())
-						.addValue(2, a.getUser())
-						.addValue(3, a.getName())
-						.addValue(4, a.getQueue())
-						.addValue(5, a.getApplicationType())
-						.addValue(6, DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(
-								new Date(a.getStartTime())))
-						.addValue(7, DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(
-								new Date(a.getFinishTime())))
-						.addValue(8, a.getYarnApplicationState().toString())
-						.addValue(9, a.getFinalApplicationStatus().toString())
-						.addValue(10, xdAdminUrl);
-				table.getRows().add(row);
-			}
-
+		List<ApplicationReport> applications = null;
+		if (verbose) {
+			applications = getYarnClient().listApplications();
 		}
-		return table;
+		else {
+			applications = getYarnClient().listRunningApplications("XD");
+		}
+
+		return new AppReportBuilder().add(Field.ID, Field.USER, Field.NAME, Field.QUEUE, Field.TYPE, Field.STARTTIME,
+				Field.FINISHTIME, Field.STATE, Field.FINALSTATUS, Field.XDADMINURL).sort(Field.ID).build(
+				applications);
 	}
 
 	/**
-	 * Builds a new {@link YarnClient}.
+	 * Deploy via xd client application.
 	 * 
-	 * @return the {@link YarnClient}
-	 * @throws Exception if error occurred
+	 * @param count the container count at start
+	 * @param redisHost the redis host
+	 * @param redisPort the redis port
+	 * @return the yarn application id of a new application
 	 */
-	private YarnClient getYarnClient() throws Exception {
-		YarnClientFactoryBean factory = new YarnClientFactoryBean();
-		factory.setConfiguration(getHadoopConfiguration());
-		factory.afterPropertiesSet();
-		return factory.getObject();
-	}
-
 	private ApplicationId deployViaXdClientApplication(String count, String redisHost, String redisPort) {
 		ArrayList<String> args = new ArrayList<String>();
 
-		args.add("--spring.yarn.appmaster.containerCount=" + count);
+		Properties props = new Properties(getProperties());
+
+		props.put("spring.yarn.appmaster.containerCount", count);
 		if (StringUtils.hasText(redisHost)) {
-			args.add("--spring.redis.host=" + redisHost);
+			props.put("spring.redis.host", redisHost);
 		}
 		if (StringUtils.hasText(redisPort)) {
 			// bail out with error if not valid port
@@ -244,10 +210,14 @@ public class YarnCommands extends ConfigurationAware implements ExecutionProcess
 			if (port < 1 || port > 65535) {
 				throw new RuntimeException("Port " + port + " not valid");
 			}
-			args.add("--spring.redis.port=" + redisPort);
+			props.put("spring.redis.port", redisPort);
 		}
 
-		return new XdClientApplication().deploy(args.toArray(new String[0]), getHadoopConfiguration());
+		for (Entry<Object, Object> entry : props.entrySet()) {
+			args.add("--" + entry.getKey() + "=" + entry.getValue());
+		}
+
+		return new XdClientApplication().deploy(args.toArray(new String[0]), getConfiguration());
 	}
 
 }

@@ -40,7 +40,6 @@ import org.springframework.yarn.am.track.UrlAppmasterTrackService;
 import org.springframework.yarn.boot.support.SpringYarnAppmasterProperties;
 import org.springframework.yarn.support.NetworkUtils;
 
-
 /**
  * 
  * @author Janne Valkealahti
@@ -87,7 +86,7 @@ public class XdYarnAppmaster extends StaticAppmaster implements ApplicationListe
 	@Override
 	public ContainerLaunchContext preLaunch(Container container, ContainerLaunchContext context) {
 		Map<String, String> env = new HashMap<String, String>(context.getEnvironment());
-		env.put("XD_HOME", "./" + syap.getContainerJar());
+		env.put("XD_HOME", "./" + syap.getContainerFile());
 		context.setEnvironment(env);
 		return context;
 	}

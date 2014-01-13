@@ -67,10 +67,9 @@ public class XdClientApplication {
 		String[] custom = new String[] {
 			"--spring.yarn.fsUri=" + configuration.get("fs.defaultFS"),
 			"--spring.yarn.rmAddress=" + configuration.get("yarn.resourcemanager.address"),
-			"--spring.yarn.schedulerAddress=" + configuration.get("yarn.resourcemanager.scheduler.address"),
+			"--spring.yarn.schedulerAddress=" + configuration.get("yarn.resourcemanager.scheduler.address")
 		};
-		args = StringUtils.concatenateStringArrays(args, custom);
-		return deploy(args);
+		return deploy(StringUtils.mergeStringArrays(args, custom));
 	}
 
 	/**
@@ -82,7 +81,7 @@ public class XdClientApplication {
 	public ApplicationId deploy(String[] args) {
 		ApplicationId applicationId = null;
 		ConfigurableApplicationContext context = null;
-		Exception tothrow = null;
+		Exception exception = null;
 
 		try {
 			context = new SpringApplicationBuilder(XdClientApplication.class)
@@ -98,6 +97,7 @@ public class XdClientApplication {
 				FileSystem fs = FileSystem.get(((AbstractYarnClient) client).getConfiguration());
 				FSDataOutputStream out = fs.create(new Path(applicationDir, "application.properties"));
 				for (String arg : args) {
+					System.out.println("XXX arg: " + arg);
 					if (arg.startsWith("--") && arg.length() > 4) {
 						out.writeBytes(arg.substring(2) + "\n");
 					}
@@ -108,7 +108,7 @@ public class XdClientApplication {
 			applicationId = client.submitApplication();
 		}
 		catch (Exception e) {
-			tothrow = e;
+			exception = e;
 			log.debug("Error submitting new XD instance", e);
 		}
 		finally {
@@ -122,8 +122,8 @@ public class XdClientApplication {
 			}
 		}
 
-		if (tothrow != null) {
-			throw new RuntimeException("Failed to submit XD instance", tothrow);
+		if (exception != null) {
+			throw new RuntimeException("Failed to submit XD instance", exception);
 		}
 
 		return applicationId;
