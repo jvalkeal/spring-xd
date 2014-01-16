@@ -14,6 +14,6 @@
 		mapred.job.tracker=
 	</hadoop:configuration>
 
-	<bean id="shellConfigurationProperties" class="java.util.Properties"/>
+	<bean id="shellConfigurationProperties" class="org.springframework.xd.shell.properties.SpringConfigurationProperties"/>
 
 </beans>

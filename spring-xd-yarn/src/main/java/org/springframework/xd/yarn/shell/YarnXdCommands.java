@@ -18,8 +18,6 @@ package org.springframework.xd.yarn.shell;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.Properties;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -30,11 +28,11 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 import org.springframework.shell.event.ParseResult;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.xd.shell.util.Table;
-import org.springframework.xd.yarn.app.xd.client.XdClientApplication;
 import org.springframework.yarn.client.YarnClient;
 
 /**
@@ -55,11 +53,17 @@ public class YarnXdCommands extends YarnCommandsSupport {
 
 	private static final String PREFIX = "yarn xd ";
 
+	private static final String COMMAND_INSTALL = PREFIX + "install";
+
 	private static final String COMMAND_LIST = PREFIX + "list";
 
 	private static final String COMMAND_SUBMIT = PREFIX + "submit";
 
 	private static final String COMMAND_KILL = PREFIX + "kill";
+
+	private static final String OPTION_INSTALL_ID = "id";
+
+	private static final String HELP_COMMAND_INSTALL = "Install application bundle into hdfs";
 
 	private static final String HELP_LIST = "List XD instances on Yarn";
 
@@ -110,6 +114,39 @@ public class YarnXdCommands extends YarnCommandsSupport {
 		}
 	}
 
+	@CliCommand(value = COMMAND_INSTALL, help = HELP_COMMAND_INSTALL)
+	public String install(
+			@CliOption(key = OPTION_INSTALL_ID, mandatory = true) String id,
+			@CliOption(key = "count", help = HELP_SUBMIT_COUNT, unspecifiedDefaultValue = "1") String count,
+			@CliOption(key = "redisHost", help = HELP_SUBMIT_REDISHOST, specifiedDefaultValue = "localhost") String redisHost,
+			@CliOption(key = "redisPort", help = HELP_SUBMIT_REDISPORT, specifiedDefaultValue = "6379") String redisPort) {
+		Assert.state(StringUtils.hasText(id), "Id must be set");
+
+		ArrayList<String> args = new ArrayList<String>();
+
+		int c = Integer.parseInt(count);
+		if (c < 1 || c > 10) {
+			throw new IllegalArgumentException("Illegal container count [" + c + "]");
+		}
+		args.add("--spring.yarn.appmaster.containerCount=" + count);
+
+		if (StringUtils.hasText(redisHost)) {
+			args.add("--spring.redis.host=" + redisHost);
+		}
+		if (StringUtils.hasText(redisPort)) {
+			// bail out with error if not valid port
+			int port = Integer.parseInt(redisPort);
+			if (port < 1 || port > 65535) {
+				throw new RuntimeException("Port " + port + " not valid");
+			}
+			args.add("--spring.redis.port=" + redisPort);
+		}
+
+
+		installApplication(new String[] { "yarn" }, id, args.toArray(new String[0]));
+		return "Successfully installed new application instance";
+	}
+
 	/**
 	 * Submits new Spring XD instance to Hadoop Yarn.
 	 * 
@@ -118,22 +155,15 @@ public class YarnXdCommands extends YarnCommandsSupport {
 	 */
 	@CliCommand(value = COMMAND_SUBMIT, help = HELP_SUBMIT)
 	public String submit(
-			@CliOption(key = "count", help = HELP_SUBMIT_COUNT, unspecifiedDefaultValue = "1") String count,
-			@CliOption(key = "redisHost", help = HELP_SUBMIT_REDISHOST, specifiedDefaultValue = "localhost") String redisHost,
-			@CliOption(key = "redisPort", help = HELP_SUBMIT_REDISPORT, specifiedDefaultValue = "6379") String redisPort)
+			@CliOption(key = "id", mandatory = true) String id)
 			throws Exception {
-
-		int c = Integer.parseInt(count);
-		if (c < 1 || c > 10) {
-			throw new IllegalArgumentException("Illegal container count [" + c + "]");
-		}
-
-		ApplicationId applicationId = deployViaXdClientApplication(count, redisHost, redisPort);
+		ApplicationId applicationId = submitApplication(new String[] { "yarn" }, id);
 		if (applicationId != null) {
-			return "Submitted new XD instance with " + count + " containers, application id is "
+			return "Submitted new XD instance with containers, application id is "
 					+ applicationId.toString();
 		}
 		throw new IllegalArgumentException("Failed to submit new application instance.");
+
 	}
 
 	/**
@@ -185,39 +215,6 @@ public class YarnXdCommands extends YarnCommandsSupport {
 		return new AppReportBuilder().add(Field.ID, Field.USER, Field.NAME, Field.QUEUE, Field.TYPE, Field.STARTTIME,
 				Field.FINISHTIME, Field.STATE, Field.FINALSTATUS, Field.XDADMINURL).sort(Field.ID).build(
 				applications);
-	}
-
-	/**
-	 * Deploy via xd client application.
-	 * 
-	 * @param count the container count at start
-	 * @param redisHost the redis host
-	 * @param redisPort the redis port
-	 * @return the yarn application id of a new application
-	 */
-	private ApplicationId deployViaXdClientApplication(String count, String redisHost, String redisPort) {
-		ArrayList<String> args = new ArrayList<String>();
-
-		Properties props = new Properties(getProperties());
-
-		props.put("spring.yarn.appmaster.containerCount", count);
-		if (StringUtils.hasText(redisHost)) {
-			props.put("spring.redis.host", redisHost);
-		}
-		if (StringUtils.hasText(redisPort)) {
-			// bail out with error if not valid port
-			int port = Integer.parseInt(redisPort);
-			if (port < 1 || port > 65535) {
-				throw new RuntimeException("Port " + port + " not valid");
-			}
-			props.put("spring.redis.port", redisPort);
-		}
-
-		for (Entry<Object, Object> entry : props.entrySet()) {
-			args.add("--" + entry.getKey() + "=" + entry.getValue());
-		}
-
-		return new XdClientApplication().deploy(args.toArray(new String[0]), getConfiguration());
 	}
 
 }

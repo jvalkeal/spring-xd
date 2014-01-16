@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package org.springframework.xd.yarn.shell;
+package org.springframework.xd.shell.properties;
 
+import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 /**
- * Command setting spring boot properties.
+ * Shell integration commands to handle Spring Boot properties.
  * 
  * @author Janne Valkealahti
  * 
@@ -46,7 +47,19 @@ public class SpringConfigurationPropertiesCommands implements ApplicationEventPu
 
 	private static final String COMMAND_LIST = PREFIX + "list";
 
+	private static final String KEY_SET_ID = "id";
+
+	private static final String KEY_SET_KEY = "key";
+
+	private static final String KEY_SET_VALUE = "value";
+
 	private static final String KEY_SET_PROPERTY = "property";
+
+	private static final String HELP_SET_ID = "what to set, in the form <name=value>";
+
+	private static final String HELP_SET_KEY = "what to set, in the form <name=value>";
+
+	private static final String HELP_SET_VALUE = "what to set, in the form <name=value>";
 
 	private static final String HELP_SET_PROPERTY = "what to set, in the form <name=value>";
 
@@ -56,7 +69,7 @@ public class SpringConfigurationPropertiesCommands implements ApplicationEventPu
 
 	@Autowired
 	@Qualifier("shellConfigurationProperties")
-	private Properties properties;
+	private SpringConfigurationProperties configurationProperties;
 
 	private ApplicationEventPublisher applicationEventPublisher;
 
@@ -84,25 +97,39 @@ public class SpringConfigurationPropertiesCommands implements ApplicationEventPu
 
 	@CliCommand(value = COMMAND_SET, help = HELP_SET)
 	public void setProperty(
-			@CliOption(key = { "", KEY_SET_PROPERTY }, mandatory = true, help = HELP_SET_PROPERTY) String property) {
-		int i = property.indexOf("=");
-		Assert.isTrue(i >= 0, "invalid format");
-		String key = property.substring(0, i);
-		Assert.hasText(key, "a valid name is required");
-		String value = property.substring(i + 1);
-		properties.setProperty(key, value);
+			@CliOption(key = { KEY_SET_ID }, help = HELP_SET_PROPERTY) String id,
+			@CliOption(key = { KEY_SET_KEY }, help = HELP_SET_PROPERTY) String key,
+			@CliOption(key = { KEY_SET_VALUE }, help = HELP_SET_PROPERTY) String value,
+			@CliOption(key = { "", KEY_SET_PROPERTY }, help = HELP_SET_PROPERTY) String property) {
+
+		if (property != null) {
+			int i = property.indexOf("=");
+			Assert.isTrue(i >= 0, "invalid format");
+			key = property.substring(0, i);
+			Assert.hasText(key, "a valid name is required");
+			value = property.substring(i + 1);
+		}
+
+		configurationProperties.setProperty(id, key, value);
 	}
 
 	@CliCommand(value = COMMAND_LIST, help = HELP_LIST)
-	public String props() {
+	public String list() {
 		StringBuilder buf = new StringBuilder();
-		buf.append("Spring Boot Properties: ");
-		buf.append(properties);
+		buf.append("Spring Configuration Properties\n\n");
+		buf.append("Global: ");
+		buf.append(configurationProperties.getProperties());
+		buf.append("\n\n");
+		for (Entry<String, Properties> entry : configurationProperties.getTaggedProperties().entrySet()) {
+			buf.append(entry.getKey() + ": ");
+			buf.append(entry.getValue());
+			buf.append("\n\n");
+		}
 		return buf.toString();
 	}
 
 	private void publishChange() {
-		applicationEventPublisher.publishEvent(new ConfigurationPropertiesModifiedEvent(properties));
+		applicationEventPublisher.publishEvent(new ConfigurationPropertiesModifiedEvent(configurationProperties));
 	}
 
 }

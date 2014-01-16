@@ -22,11 +22,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 
@@ -36,11 +37,16 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.shell.core.ExecutionProcessor;
 import org.springframework.shell.event.ParseResult;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.xd.shell.hadoop.ConfigurationModifiedEvent;
+import org.springframework.xd.shell.properties.ConfigurationPropertiesModifiedEvent;
+import org.springframework.xd.shell.properties.SpringConfigurationProperties;
 import org.springframework.xd.shell.util.Table;
 import org.springframework.xd.shell.util.TableHeader;
 import org.springframework.xd.shell.util.TableRow;
+import org.springframework.yarn.app.bootclient.YarnBootClientInstallApplication;
+import org.springframework.yarn.app.bootclient.YarnBootClientSubmitApplication;
 import org.springframework.yarn.client.YarnClient;
 import org.springframework.yarn.client.YarnClientFactoryBean;
 
@@ -61,7 +67,7 @@ public abstract class YarnCommandsSupport implements ApplicationListener<Applica
 	/** Shared spring properties instance for shell */
 	@Autowired
 	@Qualifier("shellConfigurationProperties")
-	private Properties properties;
+	private SpringConfigurationProperties configurationProperties;
 
 	/** Flag indicating a changed configuration */
 	private boolean configurationReinitialize = false;
@@ -120,16 +126,40 @@ public abstract class YarnCommandsSupport implements ApplicationListener<Applica
 	}
 
 	/**
-	 * Gets the properties.
+	 * Gets the Spring configuration properties set in shell.
 	 * 
-	 * @return the properties
+	 * @return the spring configuration properties
 	 */
-	public Properties getProperties() {
-		return properties;
+	public SpringConfigurationProperties getConfigurationProperties() {
+		return configurationProperties;
 	}
 
-	protected void installApplication() {
+	/**
+	 * Install application into hdfs.
+	 * 
+	 * @param id the unique identifier
+	 */
+	protected void installApplication(String[] profiles, String id, String[] args) {
+		Assert.state(StringUtils.hasText(id), "Id must be set");
+		new YarnBootClientInstallApplication().install(id, profiles,
+				getConfigurationProperties().getMergedProperties(id),
+				getConfiguration(), args);
+	}
 
+	/**
+	 * Submit application into Yarn.
+	 * 
+	 * @param id the unique identifier
+	 * @param count the count
+	 * @return the application id
+	 */
+	protected ApplicationId submitApplication(String[] profiles, String id) {
+		ArrayList<String> args = new ArrayList<String>();
+
+		for (Entry<Object, Object> entry : getConfigurationProperties().getMergedProperties(id).entrySet()) {
+			args.add("--" + entry.getKey() + "=" + entry.getValue());
+		}
+		return new YarnBootClientSubmitApplication().submit(profiles, getConfiguration(), args.toArray(new String[0]));
 	}
 
 	/**

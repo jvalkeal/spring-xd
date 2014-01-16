@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.xd.yarn.shell;
-
-import java.util.Properties;
+package org.springframework.xd.shell.properties;
 
 import org.springframework.context.ApplicationEvent;
 
@@ -27,12 +25,14 @@ import org.springframework.context.ApplicationEvent;
  */
 public class ConfigurationPropertiesModifiedEvent extends ApplicationEvent {
 
-	public ConfigurationPropertiesModifiedEvent(Properties source) {
+	private static final long serialVersionUID = 1L;
+
+	public ConfigurationPropertiesModifiedEvent(SpringConfigurationProperties source) {
 		super(source);
 	}
 
-	public Properties getProperties() {
-		return (Properties) this.getSource();
+	public SpringConfigurationProperties getConfigurationProperties() {
+		return (SpringConfigurationProperties) this.getSource();
 	}
 
 }

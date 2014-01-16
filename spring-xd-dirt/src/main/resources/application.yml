@@ -67,8 +67,10 @@ spring:
 ---
 
 spring:
+  profiles: yarn
   yarn:
-    applicationDir: /xd/yarn/
+    applicationDir: /xd/yarn/xdapps/xdapp/
+    applicationsBaseDir: /xd/yarn/xdapps/
     appName: xdapp
     appType: XD 
     fsUri: hdfs://localhost:8020
