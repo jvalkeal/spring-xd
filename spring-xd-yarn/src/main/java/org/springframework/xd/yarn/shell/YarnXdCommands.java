@@ -209,6 +209,7 @@ public class YarnXdCommands extends YarnCommandsSupport {
 		args.add("--spring.yarn.YarnBootClientInfoApplication.operation=SUBMITTED");
 		args.add("--spring.yarn.YarnBootClientInfoApplication.verbose=" + verbose);
 		args.add("--spring.yarn.YarnBootClientInfoApplication.type=XD");
+		args.add("--spring.yarn.YarnBootClientInfoApplication.headers.ORIGTRACKURL=XD ADMIN URL");
 		return new YarnBootClientInfoApplication().info("", null,
 				getConfigurationProperties().getMergedProperties("foo"),
 				getConfiguration(), args.toArray(new String[0]));
