@@ -16,6 +16,8 @@
 
 package org.springframework.xd.yarn.shell;
 
+import java.util.ArrayList;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
@@ -28,6 +30,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.xd.shell.util.Table;
+import org.springframework.yarn.app.bootclient.YarnBootClientInfoApplication;
 import org.springframework.yarn.client.YarnClient;
 
 /**
@@ -119,9 +122,7 @@ public class YarnAppCommands extends YarnCommandsSupport {
 			@CliOption(key = OPTION_INSTALL_OVERWRITE, help = HELP_OPTION_INSTALL_OVERWRITE, unspecifiedDefaultValue = "false", specifiedDefaultValue = "true") boolean overwrite) {
 		Assert.state(StringUtils.hasText(id), "Id must be set");
 
-		// check running
-
-		// can't overwrite if in use
+		// TODO: check if running if trying to overwrite
 
 		installApplication(new String[0], id, new String[0]);
 		return "Successfully installed new application instance";
@@ -175,21 +176,16 @@ public class YarnAppCommands extends YarnCommandsSupport {
 	 * @throws Exception if error occurred
 	 */
 	@CliCommand(value = COMMAND_LIST_SUBMITTED, help = HELP_COMMAND_LIST_SUBMITTED)
-	public Table listSubmitted(
+	public String listSubmitted(
 			@CliOption(key = OPTION_LIST_SUBMITTED_VERBOSE, help = HELP_OPTION_LIST_SUBMITTED_VERBOSE, unspecifiedDefaultValue = "false", specifiedDefaultValue = "true") boolean verbose)
 			throws Exception {
-		if (verbose) {
-			return new AppReportBuilder().add(Field.ID, Field.USER, Field.NAME, Field.QUEUE, Field.TYPE,
-					Field.STARTTIME,
-					Field.FINISHTIME, Field.STATE, Field.FINALSTATUS).sort(Field.ID).build(
-					getYarnClient().listApplications());
-		}
-		else {
-			return new AppReportBuilder().add(Field.ID, Field.USER, Field.NAME, Field.QUEUE, Field.TYPE,
-					Field.STARTTIME,
-					Field.FINISHTIME, Field.STATE, Field.FINALSTATUS).sort(Field.ID).build(
-					getYarnClient().listRunningApplications("BOOT"));
-		}
+		ArrayList<String> args = new ArrayList<String>();
+		args.add("--spring.yarn.YarnBootClientInfoApplication.operation=SUBMITTED");
+		args.add("--spring.yarn.YarnBootClientInfoApplication.verbose=" + verbose);
+		args.add("--spring.yarn.YarnBootClientInfoApplication.type=BOOT");
+		return new YarnBootClientInfoApplication().info("", null,
+				getConfigurationProperties().getMergedProperties("foo"),
+				getConfiguration(), args.toArray(new String[0]));
 	}
 
 	/**
@@ -199,8 +195,13 @@ public class YarnAppCommands extends YarnCommandsSupport {
 	 * @throws Exception if error occurred
 	 */
 	@CliCommand(value = COMMAND_LIST_INSTALLED, help = HELP_COMMAND_LIST_INSTALLED)
-	public Table listInstalled() {
-		return null;
+	public String listInstalled() {
+		ArrayList<String> args = new ArrayList<String>();
+		args.add("--spring.yarn.YarnBootClientInfoApplication.operation=INSTALLED");
+		args.add("--spring.yarn.YarnBootClientInfoApplication.type=BOOT");
+		return new YarnBootClientInfoApplication().info("", null,
+				getConfigurationProperties().getMergedProperties("foo"),
+				getConfiguration(), args.toArray(new String[0]));
 	}
 
 }

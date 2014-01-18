@@ -16,20 +16,13 @@
 
 package org.springframework.xd.yarn.shell;
 
-import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
-import org.apache.hadoop.yarn.api.records.ApplicationReport;
-import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -42,9 +35,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.xd.shell.hadoop.ConfigurationModifiedEvent;
 import org.springframework.xd.shell.properties.ConfigurationPropertiesModifiedEvent;
 import org.springframework.xd.shell.properties.SpringConfigurationProperties;
-import org.springframework.xd.shell.util.Table;
-import org.springframework.xd.shell.util.TableHeader;
-import org.springframework.xd.shell.util.TableRow;
 import org.springframework.yarn.app.bootclient.YarnBootClientInstallApplication;
 import org.springframework.yarn.app.bootclient.YarnBootClientSubmitApplication;
 import org.springframework.yarn.client.YarnClient;
@@ -199,7 +189,8 @@ public abstract class YarnCommandsSupport implements ApplicationListener<Applica
 	}
 
 	/**
-	 * Builds a new {@link YarnClient} for generic application status queries.
+	 * Builds a new {@link YarnClient} for generic client usage where it would be over the top to work via boot
+	 * environment.
 	 * 
 	 * @return the {@link YarnClient}
 	 * @throws Exception if error occurred
@@ -209,159 +200,6 @@ public abstract class YarnCommandsSupport implements ApplicationListener<Applica
 		factory.setConfiguration(getConfiguration());
 		factory.afterPropertiesSet();
 		return factory.getObject();
-	}
-
-	/**
-	 * Utility class helping to build shell tables for yarn application reports.
-	 */
-	protected static class AppReportBuilder {
-
-		private ArrayList<Field> fields = new ArrayList<Field>();
-
-		private Field sort;
-
-		public AppReportBuilder() {
-		}
-
-		public AppReportBuilder add(Field f) {
-			fields.add(f);
-			return this;
-		}
-
-		public AppReportBuilder add(Field... f) {
-			for (Field ff : f) {
-				fields.add(ff);
-			}
-			return this;
-		}
-
-		public AppReportBuilder sort(Field f) {
-			sort = f;
-			return this;
-		}
-
-		public Table build(List<ApplicationReport> reports) {
-			if (sort != null) {
-				Collections.sort(reports, new ApplicationReportComparator(sort));
-			}
-			Table table = new Table();
-			addHeader(table);
-			for (ApplicationReport report : reports) {
-				addRow(table, report);
-			}
-			return table;
-		}
-
-		private void addHeader(Table table) {
-			int index = 1;
-			for (Field f : fields) {
-				table.addHeader(index++, new TableHeader(f.getName()));
-			}
-		}
-
-		private void addRow(Table table, ApplicationReport report) {
-			final TableRow row = new TableRow();
-			int index = 1;
-			for (Field f : fields) {
-				if (Field.ID == f) {
-					row.addValue(index++, report.getApplicationId().toString());
-				}
-				else if (Field.USER == f) {
-					row.addValue(index++, report.getUser());
-				}
-				else if (Field.NAME == f) {
-					row.addValue(index++, report.getName());
-				}
-				else if (Field.QUEUE == f) {
-					row.addValue(index++, report.getQueue());
-				}
-				else if (Field.TYPE == f) {
-					row.addValue(index++, report.getApplicationType());
-				}
-				else if (Field.STARTTIME == f) {
-					row.addValue(index++, DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(
-							new Date(report.getStartTime())));
-				}
-				else if (Field.FINISHTIME == f) {
-					long time = report.getFinishTime();
-					String value = time > 0 ? DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(
-							new Date(time))
-							: "N/A";
-					row.addValue(index++, value);
-				}
-				else if (Field.STATE == f) {
-					row.addValue(index++, report.getYarnApplicationState().toString());
-				}
-				else if (Field.FINALSTATUS == f) {
-					row.addValue(index++, report.getFinalApplicationStatus().toString());
-				}
-				else if (Field.XDADMINURL == f) {
-					String url = report.getYarnApplicationState() == YarnApplicationState.RUNNING ? report.getOriginalTrackingUrl()
-							: "";
-					row.addValue(index++, url);
-				}
-				else if (Field.TRACKURL == f) {
-					row.addValue(index++, report.getTrackingUrl());
-				}
-			}
-			table.getRows().add(row);
-		}
-	}
-
-	/**
-	 * Enums for ApplicationReport fields.
-	 */
-	protected static enum Field {
-		ID("APPLICATION ID"),
-		USER,
-		NAME,
-		QUEUE,
-		TYPE,
-		STARTTIME,
-		FINISHTIME,
-		STATE,
-		FINALSTATUS,
-		XDADMINURL("XD ADMIN URL"),
-		TRACKURL("TRACKING URL");
-
-		private String name;
-
-		private Field() {
-		}
-
-		private Field(String name) {
-			this.name = name;
-		}
-
-		protected String getName() {
-			return StringUtils.hasText(name) ? name : this.toString();
-		}
-	}
-
-	/**
-	 * Sort comparator for ApplicationReport.
-	 */
-	private static class ApplicationReportComparator implements Comparator<ApplicationReport> {
-
-		private final Field f;
-
-		private ApplicationReportComparator(Field f) {
-			this.f = f;
-		}
-
-		@Override
-		public int compare(ApplicationReport l, ApplicationReport r) {
-			if (Field.ID == f) {
-				return -(l.getApplicationId().toString().compareTo(r.getApplicationId().toString()));
-			}
-			else if (Field.USER == f) {
-				return l.getUser().compareTo(r.getUser());
-			}
-			else {
-				return 0;
-			}
-		}
-
 	}
 
 }

@@ -17,22 +17,20 @@
 package org.springframework.xd.yarn.shell;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 
-import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 import org.springframework.shell.event.ParseResult;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.xd.shell.util.Table;
+import org.springframework.yarn.app.bootclient.YarnBootClientInfoApplication;
 import org.springframework.yarn.client.YarnClient;
 
 /**
@@ -55,7 +53,7 @@ public class YarnXdCommands extends YarnCommandsSupport {
 
 	private static final String COMMAND_INSTALL = PREFIX + "install";
 
-	private static final String COMMAND_LIST = PREFIX + "list";
+	private static final String COMMAND_LIST_SUBMITTED = PREFIX + "list submitted";
 
 	private static final String COMMAND_SUBMIT = PREFIX + "submit";
 
@@ -63,11 +61,13 @@ public class YarnXdCommands extends YarnCommandsSupport {
 
 	private static final String OPTION_INSTALL_ID = "id";
 
+	private static final String OPTION_LIST_SUBMITTED_VERBOSE = "verbose";
+
 	private static final String HELP_COMMAND_INSTALL = "Install application bundle into hdfs";
 
-	private static final String HELP_LIST = "List XD instances on Yarn";
+	private static final String HELP_COMMAND_LIST_SUBMITTED = "List XD application instances on Yarn";
 
-	private static final String HELP_LIST_VERBOSE = "verbose output";
+	private static final String HELP_OPTION_LIST_SUBMITTED_VERBOSE = "verbose output";
 
 	private static final String HELP_SUBMIT = "Submit new XD instance to Yarn";
 
@@ -91,11 +91,11 @@ public class YarnXdCommands extends YarnCommandsSupport {
 		return true;
 	}
 
-	@CliAvailabilityIndicator({ COMMAND_LIST, COMMAND_SUBMIT, COMMAND_KILL })
-	public boolean available() {
-		// we have yarn if YarnConfiguration class can be found
-		return ClassUtils.isPresent("org.apache.hadoop.yarn.conf.YarnConfiguration", getClass().getClassLoader());
-	}
+	// @CliAvailabilityIndicator({ COMMAND_LIST, COMMAND_SUBMIT, COMMAND_KILL })
+	// public boolean available() {
+	// // we have yarn if YarnConfiguration class can be found
+	// return ClassUtils.isPresent("org.apache.hadoop.yarn.conf.YarnConfiguration", getClass().getClassLoader());
+	// }
 
 	@Override
 	public ParseResult beforeInvocation(ParseResult invocationContext) {
@@ -200,21 +200,18 @@ public class YarnXdCommands extends YarnCommandsSupport {
 	 * @return The {@link Table} of known application instances.
 	 * @throws Exception if error occurred
 	 */
-	@CliCommand(value = COMMAND_LIST, help = HELP_LIST)
-	public Table list(
-			@CliOption(key = "verbose", help = HELP_LIST_VERBOSE, unspecifiedDefaultValue = "false", specifiedDefaultValue = "true") boolean verbose)
+	@CliCommand(value = COMMAND_LIST_SUBMITTED, help = HELP_COMMAND_LIST_SUBMITTED)
+	public String list(
+			@CliOption(key = OPTION_LIST_SUBMITTED_VERBOSE, help = HELP_OPTION_LIST_SUBMITTED_VERBOSE, unspecifiedDefaultValue = "false", specifiedDefaultValue = "true") boolean verbose)
 			throws Exception {
-		List<ApplicationReport> applications = null;
-		if (verbose) {
-			applications = getYarnClient().listApplications();
-		}
-		else {
-			applications = getYarnClient().listRunningApplications("XD");
-		}
 
-		return new AppReportBuilder().add(Field.ID, Field.USER, Field.NAME, Field.QUEUE, Field.TYPE, Field.STARTTIME,
-				Field.FINISHTIME, Field.STATE, Field.FINALSTATUS, Field.XDADMINURL).sort(Field.ID).build(
-				applications);
+		ArrayList<String> args = new ArrayList<String>();
+		args.add("--spring.yarn.YarnBootClientInfoApplication.operation=SUBMITTED");
+		args.add("--spring.yarn.YarnBootClientInfoApplication.verbose=" + verbose);
+		args.add("--spring.yarn.YarnBootClientInfoApplication.type=XD");
+		return new YarnBootClientInfoApplication().info("", null,
+				getConfigurationProperties().getMergedProperties("foo"),
+				getConfiguration(), args.toArray(new String[0]));
 	}
 
 }
