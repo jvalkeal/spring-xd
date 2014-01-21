@@ -79,6 +79,7 @@ spring:
     client:
       appmasterFile: spring-xd-@application.version@-yarnapp.zip
       runnerClazz: org.springframework.xd.dirt.server.AdminServerApplication
+      memory: 500M
       classpath:
         - "./spring-xd-@application.version@-yarnapp.zip/lib/*"
         - "./spring-xd-@application.version@-yarnapp.zip/modules/processor/scripts"
