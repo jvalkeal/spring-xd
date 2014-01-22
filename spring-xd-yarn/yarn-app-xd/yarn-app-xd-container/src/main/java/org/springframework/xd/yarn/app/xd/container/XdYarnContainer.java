@@ -27,10 +27,14 @@ import org.apache.hadoop.fs.Path;
 import org.springframework.yarn.container.AbstractYarnContainer;
 
 /**
+ * Custom yarn container for xd containers.
  * 
  * @author Janne Valkealahti
+ * 
  */
 public class XdYarnContainer extends AbstractYarnContainer {
+
+	// TODO: for now just a placeholder
 
 	private final static Log log = LogFactory.getLog(XdYarnContainer.class);
 

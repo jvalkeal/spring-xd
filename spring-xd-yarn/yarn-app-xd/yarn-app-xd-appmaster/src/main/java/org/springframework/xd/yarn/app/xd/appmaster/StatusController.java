@@ -24,11 +24,16 @@ import org.springframework.yarn.am.monitor.ContainerMonitor;
 import org.springframework.yarn.am.monitor.DefaultContainerMonitor;
 
 /**
+ * Controller which is used to interact with with an XD's {@code XdYarnAppmaster} to query a current status of it and
+ * its containers.
  * 
  * @author Janne Valkealahti
+ * 
  */
 @Controller
 public class StatusController {
+
+	// TODO: for now just a placeholder
 
 	@Autowired
 	private XdYarnAppmaster appmaster;

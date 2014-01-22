@@ -659,7 +659,6 @@ project('spring-xd-hadoop:hadoop22') {
 	description = 'Hadoop 2.0 dependencies'
 	dependencies {
 		runtime project(':spring-xd-yarn')
-		runtime project(':spring-xd-yarn:yarn-app-xd:yarn-app-xd-client')
 		runtime ("org.springframework.data:spring-data-hadoop:${springDataHadoopVersion}-hadoop22") {
 			exclude group: 'org.apache.hadoop'
 		}
@@ -1319,7 +1318,6 @@ project('spring-xd-yarn') {
 		compile(project(':spring-xd-shell')) {
 			exclude group: 'org.springframework.data'
 		}
-		compile project(':spring-xd-yarn:yarn-app-xd:yarn-app-xd-client')
 		compile "org.springframework.data:spring-yarn-boot:$springDataHadoopVersion-hadoop22"
 		compile "org.springframework.data:spring-yarn-boot-client:$springDataHadoopVersion-hadoop22"
 	}
@@ -1329,13 +1327,6 @@ project('spring-xd-yarn:yarn-app-xd') {
 	description = 'Spring Yarn XD App'
 	dependencies {
 		compile "org.springframework.data:spring-yarn-boot:$springDataHadoopVersion-hadoop22"
-	}
-}
-
-project('spring-xd-yarn:yarn-app-xd:yarn-app-xd-client') {
-	description = 'Spring Yarn XD App Client'
-	dependencies {
-		compile project(':spring-xd-yarn:yarn-app-xd')
 	}
 }
 

@@ -41,6 +41,7 @@ import org.springframework.yarn.boot.support.SpringYarnAppmasterProperties;
 import org.springframework.yarn.support.NetworkUtils;
 
 /**
+ * Custom application master for XD.
  * 
  * @author Janne Valkealahti
  * 
@@ -110,9 +111,6 @@ public class XdYarnAppmaster extends StaticAppmaster implements ApplicationListe
 
 	}
 
-	/**
-	 * Poller which checks idle timeout by last write and closes a writer if timeout has occurred.
-	 */
 	private class StartDelayPoller extends PollingTaskSupport<Integer> {
 
 		private final EmbeddedServletContainer embeddedServletContainer;
