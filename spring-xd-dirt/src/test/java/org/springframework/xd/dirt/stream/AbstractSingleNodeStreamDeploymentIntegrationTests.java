@@ -27,10 +27,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.junit.After;
-import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.ExternalResource;
 
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.http.MediaType;
@@ -46,6 +46,7 @@ import org.springframework.xd.dirt.event.AbstractModuleEvent;
 import org.springframework.xd.dirt.server.SingleNodeApplication;
 import org.springframework.xd.module.ModuleDefinition;
 import org.springframework.xd.module.core.Module;
+import org.springframework.xd.test.RandomConfigurationSupport;
 
 
 /**
@@ -57,21 +58,37 @@ import org.springframework.xd.module.core.Module;
  * @author Gunnar Hillert
  * @author Mark Fisher
  */
-public abstract class AbstractSingleNodeStreamDeploymentIntegrationTests {
+public abstract class AbstractSingleNodeStreamDeploymentIntegrationTests extends RandomConfigurationSupport {
 
-	private AbstractApplicationContext context;
+	protected static AbstractApplicationContext context;
 
-	private SingleNodeApplication application;
+	private static SingleNodeApplication application;
 
-	protected StreamDefinitionRepository streamDefinitionRepository;
+	protected static StreamDefinitionRepository streamDefinitionRepository;
 
-	protected StreamRepository streamRepository;
+	protected static StreamRepository streamRepository;
 
-	protected StreamDeployer streamDeployer;
+	protected static StreamDeployer streamDeployer;
 
-	private ModuleEventListener moduleEventListener = new ModuleEventListener();
+	private static ModuleEventListener moduleEventListener = new ModuleEventListener();
 
-	private final QueueChannel tapChannel = new QueueChannel();
+	private static final QueueChannel tapChannel = new QueueChannel();
+
+
+	@ClassRule
+	public static ExternalResource shutdownApplication = new ExternalResource() {
+
+		@Override
+		protected void after() {
+			if (application != null) {
+				application.close();
+			}
+		}
+	};
+
+	protected static final String XD_DEPLOYER_PLACEHOLDER = "${xd.deployer.queue}";
+
+	protected static final String XD_UNDEPLOYER_PLACEHOLDER = "${xd.undeployer.topic}";
 
 	@Test
 	public final void testRoutingWithSpel() throws InterruptedException {
@@ -89,7 +106,6 @@ public abstract class AbstractSingleNodeStreamDeploymentIntegrationTests {
 
 	@Test
 	public final void testTopicChannel() throws InterruptedException {
-
 		StreamDefinition bar1Definition = new StreamDefinition("bar1Definition",
 				"topic:foo > queue:bar1");
 		StreamDefinition bar2Definition = new StreamDefinition("bar2Definition",
@@ -126,20 +142,17 @@ public abstract class AbstractSingleNodeStreamDeploymentIntegrationTests {
 		bus.unbindProducer("topic:foo", testChannel);
 		bus.unbindConsumer("queue:bar1", bar1Channel);
 		bus.unbindConsumer("queue:bar2", bar2Channel);
-
 	}
 
 
-	@Before
-	public final void setUp() {
-		String transport = this.getTransport();
-		this.application = new SingleNodeApplication();
+	protected final static void setUp(String transport) {
+		application = new SingleNodeApplication();
 		application.run("--transport", transport);
 
-		this.context = (AbstractApplicationContext) application.getContainerContext();
-		this.streamDefinitionRepository = context.getBean(StreamDefinitionRepository.class);
-		this.streamRepository = context.getBean(StreamRepository.class);
-		this.streamDeployer = application.getAdminContext().getBean(StreamDeployer.class);
+		context = (AbstractApplicationContext) application.getContainerContext();
+		streamDefinitionRepository = context.getBean(StreamDefinitionRepository.class);
+		streamRepository = context.getBean(StreamRepository.class);
+		streamDeployer = application.getAdminContext().getBean(StreamDeployer.class);
 
 		AbstractMessageChannel deployChannel = application.getAdminContext().getBean("deployChannel",
 				AbstractMessageChannel.class);
@@ -147,14 +160,20 @@ public abstract class AbstractSingleNodeStreamDeploymentIntegrationTests {
 				AbstractMessageChannel.class);
 		deployChannel.addInterceptor(new WireTap(tapChannel));
 		undeployChannel.addInterceptor(new WireTap(tapChannel));
-		context.addApplicationListener(this.moduleEventListener);
-		setupApplicationContext(context);
+		context.addApplicationListener(moduleEventListener);
 	}
 
 	@After
-	public final void shutDown() {
-		cleanup(this.context);
-		this.application.close();
+	public void cleanUp() {
+		streamRepository.deleteAll();
+		streamDefinitionRepository.deleteAll();
+		streamDeployer.undeployAll();
+
+		Message<?> msg = tapChannel.receive(1000);
+		while (msg != null) {
+			msg = tapChannel.receive(1000);
+		}
+
 	}
 
 	@Test
@@ -194,20 +213,15 @@ public abstract class AbstractSingleNodeStreamDeploymentIntegrationTests {
 		assertNotNull(next);
 		String payload = (String) next.getPayload();
 
-		assertTrue(payload.contains("\"module\":\"" + moduleName + "\""));
-		assertTrue(payload.contains("\"remove\":" + (remove ? "true" : "false")));
+		assertTrue(String.format("payload %s does not contain the expected module name %s", payload, moduleName),
+				payload.contains("\"module\":\"" + moduleName + "\""));
+		assertTrue(String.format("payload %s does not contain the expected remove: value", payload),
+				payload.contains("\"remove\":" + (remove ? "true" : "false")));
 	}
-
-	protected void setupApplicationContext(ApplicationContext context) {
-	}
-
-	protected abstract String getTransport();
-
-	protected abstract void cleanup(ApplicationContext context);
 
 	protected Module getModule(String moduleName, int index) {
 
-		final Map<String, Map<Integer, Module>> deployedModules = this.moduleEventListener.getDeployedModules();
+		final Map<String, Map<Integer, Module>> deployedModules = moduleEventListener.getDeployedModules();
 
 		Module matchedModule = null;
 		for (Entry<String, Map<Integer, Module>> entry : deployedModules.entrySet()) {
