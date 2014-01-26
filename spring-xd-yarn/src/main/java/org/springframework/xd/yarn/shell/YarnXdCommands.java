@@ -31,7 +31,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.xd.shell.util.Table;
-import org.springframework.yarn.app.bootclient.YarnBootClientInfoApplication;
+import org.springframework.yarn.boot.app.YarnBootClientInfoApplication;
 import org.springframework.yarn.client.YarnClient;
 
 /**

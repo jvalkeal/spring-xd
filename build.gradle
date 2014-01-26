@@ -1319,7 +1319,6 @@ project('spring-xd-yarn') {
 			exclude group: 'org.springframework.data'
 		}
 		compile "org.springframework.data:spring-yarn-boot:$springDataHadoopVersion-hadoop22"
-		compile "org.springframework.data:spring-yarn-boot-client:$springDataHadoopVersion-hadoop22"
 	}
 }
 
