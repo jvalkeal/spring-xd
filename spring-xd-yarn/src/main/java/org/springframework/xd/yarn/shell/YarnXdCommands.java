@@ -17,6 +17,7 @@
 package org.springframework.xd.yarn.shell;
 
 import java.util.ArrayList;
+import java.util.Properties;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -91,12 +92,6 @@ public class YarnXdCommands extends YarnCommandsSupport {
 		return true;
 	}
 
-	// @CliAvailabilityIndicator({ COMMAND_LIST, COMMAND_SUBMIT, COMMAND_KILL })
-	// public boolean available() {
-	// // we have yarn if YarnConfiguration class can be found
-	// return ClassUtils.isPresent("org.apache.hadoop.yarn.conf.YarnConfiguration", getClass().getClassLoader());
-	// }
-
 	@Override
 	public ParseResult beforeInvocation(ParseResult invocationContext) {
 		invocationContext = super.beforeInvocation(invocationContext);
@@ -116,22 +111,21 @@ public class YarnXdCommands extends YarnCommandsSupport {
 
 	@CliCommand(value = COMMAND_INSTALL, help = HELP_COMMAND_INSTALL)
 	public String install(
-			@CliOption(key = OPTION_INSTALL_ID, mandatory = true) String id,
+			@CliOption(key = OPTION_INSTALL_ID, mandatory = true) String appId,
 			@CliOption(key = "count", help = HELP_SUBMIT_COUNT, unspecifiedDefaultValue = "1") String count,
 			@CliOption(key = "redisHost", help = HELP_SUBMIT_REDISHOST, specifiedDefaultValue = "localhost") String redisHost,
 			@CliOption(key = "redisPort", help = HELP_SUBMIT_REDISPORT, specifiedDefaultValue = "6379") String redisPort) {
-		Assert.state(StringUtils.hasText(id), "Id must be set");
-
-		ArrayList<String> args = new ArrayList<String>();
+		Assert.state(StringUtils.hasText(appId), "App id must be set");
+		Properties appProperties = new Properties();
 
 		int c = Integer.parseInt(count);
 		if (c < 1 || c > 10) {
 			throw new IllegalArgumentException("Illegal container count [" + c + "]");
 		}
-		args.add("--spring.yarn.appmaster.containerCount=" + count);
+		appProperties.put("spring.yarn.appmaster.containerCount", count);
 
 		if (StringUtils.hasText(redisHost)) {
-			args.add("--spring.redis.host=" + redisHost);
+			appProperties.put("spring.redis.host", redisHost);
 		}
 		if (StringUtils.hasText(redisPort)) {
 			// bail out with error if not valid port
@@ -139,11 +133,10 @@ public class YarnXdCommands extends YarnCommandsSupport {
 			if (port < 1 || port > 65535) {
 				throw new RuntimeException("Port " + port + " not valid");
 			}
-			args.add("--spring.redis.port=" + redisPort);
+			appProperties.put("spring.redis.port", redisPort);
 		}
 
-
-		installApplication(new String[] { "yarn" }, id, args.toArray(new String[0]));
+		installApplication(new String[] { "yarn" }, appId, null, appProperties, true, new String[0]);
 		return "Successfully installed new application instance";
 	}
 
@@ -206,10 +199,10 @@ public class YarnXdCommands extends YarnCommandsSupport {
 			throws Exception {
 
 		ArrayList<String> args = new ArrayList<String>();
-		args.add("--spring.yarn.YarnBootClientInfoApplication.operation=SUBMITTED");
-		args.add("--spring.yarn.YarnBootClientInfoApplication.verbose=" + verbose);
-		args.add("--spring.yarn.YarnBootClientInfoApplication.type=XD");
-		args.add("--spring.yarn.YarnBootClientInfoApplication.headers.ORIGTRACKURL=XD ADMIN URL");
+		args.add("--spring.yarn.internal.YarnBootClientInfoApplication.operation=SUBMITTED");
+		args.add("--spring.yarn.internal.YarnBootClientInfoApplication.verbose=" + verbose);
+		args.add("--spring.yarn.internal.YarnBootClientInfoApplication.type=XD");
+		args.add("--spring.yarn.internal.YarnBootClientInfoApplication.headers.ORIGTRACKURL=XD ADMIN URL");
 		return new YarnBootClientInfoApplication().info("", null,
 				getConfigurationProperties().getMergedProperties("foo"),
 				getConfiguration(), args.toArray(new String[0]));
