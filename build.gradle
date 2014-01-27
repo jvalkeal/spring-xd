@@ -1322,14 +1322,7 @@ project('spring-xd-yarn') {
 	}
 }
 
-project('spring-xd-yarn:yarn-app-xd') {
-	description = 'Spring Yarn XD App'
-	dependencies {
-		compile "org.springframework.data:spring-yarn-boot:$springDataHadoopVersion-hadoop22"
-	}
-}
-
-project('spring-xd-yarn:yarn-app-xd:yarn-app-xd-appmaster') {
+project('spring-xd-yarn:yarn-app-xd-appmaster') {
 	description = 'Spring Yarn XD App Appmaster'
 	configurations {
 		hadoopruntime.exclude group: 'log4j'
@@ -1340,7 +1333,6 @@ project('spring-xd-yarn:yarn-app-xd:yarn-app-xd-appmaster') {
 		hadoopruntime.exclude group: 'org.apache.activemq'
 	}
 	dependencies {
-		compile project(':spring-xd-yarn:yarn-app-xd')
 		compile "org.springframework.data:spring-yarn-boot:$springDataHadoopVersion-hadoop22"
 		compile "org.springframework:spring-web:$springVersion"
 		hadoopruntime configurations.runtime
@@ -1352,10 +1344,9 @@ project('spring-xd-yarn:yarn-app-xd:yarn-app-xd-appmaster') {
 	}
 }
 
-project('spring-xd-yarn:yarn-app-xd:yarn-app-xd-container') {
+project('spring-xd-yarn:yarn-app-xd-container') {
 	description = 'Spring Yarn XD App Container'
 	dependencies {
-		compile project(':spring-xd-yarn:yarn-app-xd')
 		compile "org.springframework.data:spring-yarn-boot:$springDataHadoopVersion-hadoop22"
 		compile "org.springframework:spring-web:$springVersion"
 	}
@@ -1365,12 +1356,12 @@ project('spring-xd-yarn:yarn-app-xd:yarn-app-xd-container') {
 	}
 }
 
-task copyYarnInstall(type: Copy, dependsOn: [":spring-xd-yarn:yarn-app-xd:yarn-app-xd-appmaster:copyToLib","spring-xd-yarn:yarn-app-xd:yarn-app-xd-container:copyToLib"]) {
-	from("$rootDir/spring-xd-yarn/yarn-app-xd/yarn-app-xd-appmaster/build") {
+task copyYarnInstall(type: Copy, dependsOn: [":spring-xd-yarn:yarn-app-xd-appmaster:copyToLib","spring-xd-yarn:yarn-app-xd-container:copyToLib"]) {
+	from("$rootDir/spring-xd-yarn/yarn-app-xd-appmaster/build") {
 		include 'lib/yarn-app-xd-*jar'
 		include 'lib/spring-yarn-*jar'
 	}
-	from("$rootDir/spring-xd-yarn/yarn-app-xd/yarn-app-xd-container/build") {
+	from("$rootDir/spring-xd-yarn/yarn-app-xd-container/build") {
 		include 'lib/yarn-app-xd-*jar'
 	}
 	from("$rootDir/spring-xd-dirt/build/install/spring-xd-dirt") {

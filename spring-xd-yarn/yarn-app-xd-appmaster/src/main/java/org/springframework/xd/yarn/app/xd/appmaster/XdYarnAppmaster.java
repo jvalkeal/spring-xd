@@ -33,12 +33,12 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
-import org.springframework.xd.yarn.app.xd.PollingTaskSupport;
 import org.springframework.yarn.YarnSystemConstants;
 import org.springframework.yarn.am.StaticAppmaster;
 import org.springframework.yarn.am.track.UrlAppmasterTrackService;
 import org.springframework.yarn.boot.support.SpringYarnAppmasterProperties;
 import org.springframework.yarn.support.NetworkUtils;
+import org.springframework.yarn.support.PollingTaskSupport;
 
 /**
  * Custom application master for XD.
