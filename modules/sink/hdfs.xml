@@ -15,7 +15,14 @@
 	<task:executor id="taskExecutor" pool-size="1"/>
 	<task:scheduler id="taskScheduler" pool-size="1"/>
 
-	<hdp:configuration properties-location="${xd.config.home}/hadoop.properties"/>
+	<!--
+	Value from a file-system-uri will override values set from
+	properties-location. This works because file-system-uri is only used
+	if value is not empty and it doesn't resolve unless
+	admin/container is manually run with yarn profile.
+	-->
+	<hdp:configuration properties-location="${xd.config.home}/hadoop.properties"
+		file-system-uri="${spring.yarn.fsUri:}" />
 
 	<int:channel id="input"/>
 

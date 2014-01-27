@@ -1375,29 +1375,9 @@ task copyYarnInstall(type: Copy, dependsOn: [":spring-xd-yarn:yarn-app-xd-appmas
 }
 
 task yarnAppZip(type: Zip, dependsOn: copyYarnInstall, overwrite: true) {
-//task yarnAppZip(type: Zip, dependsOn: ":spring-xd-yarn:copyToLib", overwrite: true) {
 	classifier = 'yarnapp'
 	description = "Bundles the XD Yarn app."
-	//archiveName = 'xdapp.zip'
 	destinationDir = new File("$buildDir/dist/spring-xd/yarn")
-
-
-	//group = 'Application'
-	//classifier = 'dist'
-	//description = "Bundles the XD project and associated installs with libs and OS specific scripts as a zip file."
-	//ext.baseDir = "${project.name}-${project.version}";
-	//from("$buildDir/dist/spring-xd") {
-	//	into "${baseDir}"
-	//}
-
-
-	//from("$rootDir/spring-xd-yarn/build") {
-	//	include 'lib/**'
-	//}
-	//from ("$buildDir/dist/spring-xd/xd") {
-	//	exclude 'bin/**'
-	//}
-	//from "$buildDir/dist/spring-xd/xd"
 	from "$buildDir/dist/spring-xd/yarn"
 }
 

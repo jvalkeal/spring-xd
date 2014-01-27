@@ -88,10 +88,16 @@ spring:
       files:
         - "file:../../yarn/spring-xd-@application.version@-yarnapp.zip"
       arguments:
-        - "-Dspring.application.name=admin"
-        - "-Dlogging.config=file:./spring-xd-@application.version@-yarnapp.zip/config/xd-admin-logger.properties"
-        - "-DPORT=0"
-        - "-Dxd.home=./spring-xd-@application.version@-yarnapp.zip"
+        ? -Dspring.profiles.active
+        : default,hsqldb,yarn
+        ? -Dspring.application.name
+        : admin
+        ? -Dlogging.config
+        : file:./spring-xd-@application.version@-yarnapp.zip/config/xd-admin-logger.properties
+        ? -DPORT
+        : 0
+        ? -Dxd.home
+        : ./spring-xd-@application.version@-yarnapp.zip
     appmaster:
       containerCount: 1
       containerFile: spring-xd-@application.version@-yarnapp.zip
@@ -103,6 +109,13 @@ spring:
         - "./spring-xd-@application.version@-yarnapp.zip/modules/processor/scripts"
         - "./spring-xd-@application.version@-yarnapp.zip/config"
         - "./spring-xd-@application.version@-yarnapp.zip"
+      arguments:
+        ? -Dspring.profiles.active
+        : default,hsqldb,yarn
+        ? -Dspring.application.name
+        : container
+        ? -Dlogging.config
+        : file:./spring-xd-@application.version@-yarnapp.zip/config/xd-container-logger.properties
     container:
       containerClazz: org.springframework.xd.yarn.app.xd.container.XdYarnContainer
       waitLatch: false

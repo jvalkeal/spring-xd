@@ -195,6 +195,10 @@ public abstract class YarnCommandsSupport implements ApplicationEventPublisherAw
 			catch (IOException e) {
 			}
 		}
+		else {
+			properties = new Properties();
+		}
+
 		SpringYarnBootUtils.mergeHadoopPropertyIntoMap(configuration, "fs.defaultFS", "spring.yarn.fsUri",
 				properties);
 		SpringYarnBootUtils.mergeHadoopPropertyIntoMap(configuration, "yarn.resourcemanager.address",
@@ -215,8 +219,6 @@ public abstract class YarnCommandsSupport implements ApplicationEventPublisherAw
 				.appProperties(properties);
 
 		return app.run(args.toArray(new String[0]));
-		// return new YarnBootClientSubmitApplication().submit(profiles, properties, getConfiguration(),
-		// args.toArray(new String[0]));
 	}
 
 	private Properties readApplicationProperties(Path path, Configuration configuration) throws IOException {

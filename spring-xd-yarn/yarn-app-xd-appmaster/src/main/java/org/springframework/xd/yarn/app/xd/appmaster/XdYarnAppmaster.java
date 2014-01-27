@@ -86,6 +86,7 @@ public class XdYarnAppmaster extends StaticAppmaster implements ApplicationListe
 
 	@Override
 	public ContainerLaunchContext preLaunch(Container container, ContainerLaunchContext context) {
+		// for now we need to set xd home, instead of using -Dxd.home
 		Map<String, String> env = new HashMap<String, String>(context.getEnvironment());
 		env.put("XD_HOME", "./" + syap.getContainerFile());
 		context.setEnvironment(env);
