@@ -1216,10 +1216,6 @@ project('spring-xd-shell') {
 		testCompile project(":spring-xd-test")
 
 		testCompile "uk.co.modular-it:hamcrest-date:$hamcrestDateVersion"
-		// to get application.yml into shell classpath
-		runtime(project(":spring-xd-dirt")) {
-			transitive = false
-		}
 		runtime "org.slf4j:jcl-over-slf4j:$slf4jVersion",
 				"org.slf4j:slf4j-log4j12:$slf4jVersion",
 				"log4j:log4j:$log4jVersion",
@@ -1305,11 +1301,8 @@ task copyXDShellInstall(type: Copy, dependsOn: [":spring-xd-shell:installApp"]) 
 }
 
 task copyYMLInstall(type: Copy, dependsOn: ["copyXDShellInstall"]) {
-	from "$rootDir/spring-xd-dirt/src/main/resources/application.yml"
-	into "$buildDir/dist/spring-xd/xd/config"
-	    rename { String fileName ->
-        fileName.replace('yml', 'template')
-    }
+	from "$rootDir/spring-xd-dirt/build/resources/main/application.yml"
+	into "$buildDir/dist/spring-xd/shell/config"
 }
 
 project('spring-xd-yarn') {
@@ -1394,7 +1387,7 @@ task copyHadoopLibs(dependsOn: [":spring-xd-hadoop:hadoop12:copyToLib", ":spring
 	}
 }
 
-task copyInstall (type: Copy, dependsOn: ["copyRedisInstall", "copyGemfireInstall", "copyXDInstall", "copyHadoopLibs", "copyXDShellInstall", "yarnAppZip"]) {
+task copyInstall (type: Copy, dependsOn: ["copyRedisInstall", "copyGemfireInstall", "copyXDInstall", "copyHadoopLibs", "copyXDShellInstall", "copyYMLInstall", "yarnAppZip"]) {
 	group = 'Application'
 	description = "Copy all the required installs to build/dist directory"
 	from "$rootDir/scripts/README"
