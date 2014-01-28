@@ -162,10 +162,14 @@ public class YarnAppCommands extends YarnCommandsSupport {
 
 		ArrayList<String> args = new ArrayList<String>();
 
-		String[] paths = StringUtils.split(files, ",");
+		String[] paths = null;
+		if (StringUtils.hasText(files)) {
+			paths = files.split(",");
+		}
+
 		if (!ObjectUtils.isEmpty(paths)) {
 			for (int i = 0; i < paths.length; i++) {
-				args.add("--spring.yarn.client.files[" + i + "]=" + paths[i]);
+				args.add("--spring.yarn.client.files[" + i + "]=" + paths[i].trim());
 			}
 		}
 
