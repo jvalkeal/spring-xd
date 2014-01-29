@@ -30,6 +30,7 @@ xd:
     home: file:${XD_HOME}/modules
   ui:
     home: file:${XD_HOME}/spring-xd-ui
+    allow_origin: http://localhost:9889
 
 server:
   port: ${PORT:9393}
@@ -154,8 +155,8 @@ analytics: memory
 # (vcap.services.* binds to a service called 'redis' in Pivotal CF)
 spring:
   redis:
-   port: 6379
-   host: localhost
+   port: ${vcap.services.redis.credentials.port:6379}
+   host: ${vcap.services.redis.credentials.hostname:localhost}
 
 ---
 # RabbitMQ properties
