@@ -79,7 +79,7 @@ spring:
     schedulerAddress: localhost:8030
     client:
       appmasterFile: spring-xd-@application.version@-yarnapp.zip
-      runnerClazz: org.springframework.xd.dirt.server.AdminServerApplication
+      runnerClass: org.springframework.xd.dirt.server.AdminServerApplication
       memory: 500M
       classpath:
         - "./spring-xd-@application.version@-yarnapp.zip/lib/*"
@@ -102,7 +102,7 @@ spring:
     appmaster:
       containerCount: 1
       containerFile: spring-xd-@application.version@-yarnapp.zip
-      appmasterClazz: org.springframework.xd.yarn.app.xd.appmaster.XdYarnAppmaster
+      appmasterClass: org.springframework.xd.yarn.app.xd.appmaster.XdYarnAppmaster
       containerRunner: org.springframework.xd.dirt.server.LauncherApplication
       waitLatch: false
       classpath:
@@ -118,7 +118,7 @@ spring:
         ? -Dlogging.config
         : file:./spring-xd-@application.version@-yarnapp.zip/config/xd-container-logger.properties
     container:
-      containerClazz: org.springframework.xd.yarn.app.xd.container.XdYarnContainer
+      containerClass: org.springframework.xd.yarn.app.xd.container.XdYarnContainer
       waitLatch: false
 
 ---
