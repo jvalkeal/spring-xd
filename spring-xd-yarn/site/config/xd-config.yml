@@ -1,9 +1,12 @@
 # XD on YARN deployment configuration
 spring:
+    main:
+        show_banner: false
     xd:
         adminServers: 1
         containers: 3
     yarn:
+        applicationBaseDir: /xd/
         applicationDir: /xd/app/
         client:
             launchcontext:

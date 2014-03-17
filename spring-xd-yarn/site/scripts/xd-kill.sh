@@ -157,4 +157,4 @@ if $cygwin ; then
 		esac
 fi
 
-exec "$JAVACMD" -Dspring.profiles.active=admin "-Dspring.config.location=${APP_HOME}/config/xd-config.yml" "-Dspring.xd.yarn.app.path=${APP_HOME}" "-Dspring.xd.yarn.app.zip=${XD_ZIP}" "-Dspring.xd.yarn.am.path=${APP_HOME}/lib" "-Dspring.xd.yarn.am.jar=${XD_AM_JAR}" "-Dspring.xd.yarn.config.path=${APP_HOME}/config" -jar "${APP_HOME}/lib/${XD_CLIENT_JAR}" --operation INSTALL "$@"
+exec "$JAVACMD" -Dspring.profiles.active=admin "-Dspring.config.location=${APP_HOME}/config/xd-config.yml" "-Dspring.xd.yarn.app.path=${APP_HOME}" "-Dspring.xd.yarn.app.zip=${XD_ZIP}" "-Dspring.xd.yarn.am.path=${APP_HOME}/lib" "-Dspring.xd.yarn.am.jar=${XD_AM_JAR}" "-Dspring.xd.yarn.config.path=${APP_HOME}/config" -jar "${APP_HOME}/lib/${XD_CLIENT_JAR}" --operation KILL "$@"

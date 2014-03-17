@@ -3,7 +3,9 @@ spring:
         fsUri: hdfs://localhost:8020
         resourceManagerHost: localhost
     yarn:
+        appType: XD
         client:
+            clientClass: org.springframework.yarn.client.DefaultApplicationYarnClient
             resource:
                 memory: 512M
             files:
