@@ -31,6 +31,7 @@ spring:
                                 -Dspring.application.name: "admin"
                                 -DxdHomeDir: "./${spring.xd.yarn.app.zip}"
                                 -Dspring.config.location: "./servers.yml"
+                                -Dlogging.config: "./${spring.xd.yarn.app.zip}/config/xd-admin-logger.properties"
                                 -Dxd.module.config.location: "file:./"
                             containerAppClasspath:
                                 - "./${spring.xd.yarn.app.zip}/config"

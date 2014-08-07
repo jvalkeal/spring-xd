@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.yarn.api.records.Container;
+
 import org.springframework.yarn.am.cluster.ContainerCluster;
 import org.springframework.yarn.am.cluster.ManagedContainerClusterAppmaster;
 
@@ -32,23 +34,40 @@ import org.springframework.yarn.am.cluster.ManagedContainerClusterAppmaster;
 public class XdAppmaster extends ManagedContainerClusterAppmaster {
 
 	@Override
-	protected List<String> onContainerLaunchCommands(ContainerCluster cluster, List<String> orig) {
-		ArrayList<String> list = new ArrayList<String>();
+	protected List<String> onContainerLaunchCommands(Container container, ContainerCluster cluster,
+			List<String> commands) {
+
+		// only modify container so assume presence of -Dspring.application.name=container
+		if (findPosition(commands, "-Dspring.application.name=container") < 0) {
+			return commands;
+		}
+
+		ArrayList<String> list = new ArrayList<String>(commands);
 		Map<String, Object> extraProperties = cluster.getExtraProperties();
-		for (String command : orig) {
-			if (command.contains("xd.container.groups")) {
-				if (extraProperties != null && extraProperties.containsKey("containerGroups")) {
-					list.add("-Dxd.container.groups=" + cluster.getExtraProperties().get("containerGroups"));
-				}
-				else {
-					list.add(command);
-				}
+		if (extraProperties != null && extraProperties.containsKey("containerGroups")) {
+			int position = findPosition(commands, "-Dxd.container.groups=");
+			String value = "-Dxd.container.groups=" + cluster.getExtraProperties().get("containerGroups");
+			if (position < 0) {
+				list.add(Math.max(list.size() - 3, 0), value);
 			}
 			else {
-				list.add(command);
+				list.set(position, value);
 			}
 		}
+		int memory = container.getResource().getMemory();
+		int virtualCores = container.getResource().getVirtualCores();
+		list.add(Math.max(list.size() - 3, 0), "-Dxd.container.memory=" + memory);
+		list.add(Math.max(list.size() - 3, 0), "-Dxd.container.virtualCores=" + virtualCores);
 		return list;
+	}
+
+	private static int findPosition(List<String> list, String text) {
+		for (int i = 0; i < list.size(); i += 1) {
+			if (list.get(i).indexOf(text) != -1) {
+				return i;
+			}
+		}
+		return -1;
 	}
 
 }
