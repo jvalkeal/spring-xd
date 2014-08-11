@@ -117,12 +117,13 @@ do
             die "Multiple actions specified: $ACTION $1"
         fi
         shift
-        if [ "$1" = "admin" ] || [ "$1" = "container" ]; then
-            APP_NAME=$1
-            shift
+    elif [ "$1" = "shell" ]; then
+        if [ "$ACTION" = "" ]; then
+            ACTION="$1"
         else
-            die "'$1' is not a valid application for start command, valid options are 'admin' or 'container'"
+            die "Multiple actions specified: $ACTION $1"
         fi
+        shift
     elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
         die "$USAGE"
     else
@@ -275,7 +276,9 @@ function splitJvmOpts() {
 eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS
 
 if [ $ACTION = "push" ]; then
-    exec "$JAVACMD" "${JVM_OPTS[@]}" "-Dspring.config.location=${MANIFEST_PATH}/manifest.yml" -jar "${APP_HOME}/lib/${XD_CLIENT_JAR}" --install
+    exec "$JAVACMD" "${JVM_OPTS[@]}" "-Dspring.config.location=${MANIFEST_PATH}/manifest.yml" -jar "${APP_HOME}/lib/${XD_CLIENT_JAR}" push
+elif [ $ACTION = "shell" ]; then
+    exec "$JAVACMD" "${JVM_OPTS[@]}" "-Dspring.config.location=${MANIFEST_PATH}/manifest.yml" -jar "${APP_HOME}/lib/${XD_CLIENT_JAR}" shell
 elif [ $ACTION = "start" ]; then
-    exec "$JAVACMD" "${JVM_OPTS[@]}" "-Dspring.profiles.active=$APP_NAME" "-Dspring.config.location=${MANIFEST_PATH}/manifest.yml" -jar "${APP_HOME}/lib/${XD_CLIENT_JAR}"
+    exec "$JAVACMD" "${JVM_OPTS[@]}" "-Dspring.profiles.active=$APP_NAME" "-Dspring.config.location=${MANIFEST_PATH}/manifest.yml" -jar "${APP_HOME}/lib/${XD_CLIENT_JAR}" submit
 fi

@@ -61,6 +61,7 @@ allprojects {
 	group = 'org.springframework.xd'
 
 	repositories {
+		mavenLocal()
 		mavenCentral()
 		//maven { url 'http://repo.spring.io/libs-snapshot' }
 		maven { url 'http://repo.spring.io/milestone' }
@@ -99,7 +100,7 @@ ext {
 	oldGuavaVersion = '15.0'  // This is only used by spring-xd-integration-test, IO uses version 17.0
 	guavaVersion = '16.0.1'
 
-	springDataHadoopBase = '2.0.2.RELEASE'
+	springDataHadoopBase = '2.1.0.BUILD-SNAPSHOT'
 
 	singleNodeServerProcess = new SingleNodeServerProcess()
 }
@@ -552,7 +553,7 @@ project('spring-xd-yarn:spring-xd-yarn-client') {
 		compile "org.springframework:spring-jdbc"
 		compile "org.springframework:spring-tx"
 		compile "org.springframework.batch:spring-batch-core"
-		compile ("org.springframework.data:spring-yarn-boot") {
+		compile ("org.springframework.data:spring-yarn-boot-cli:${springDataHadoopBase}") {
 				exclude group: 'javax.servlet'
 				exclude group: 'javax.servlet.jsp'
 				exclude group: 'tomcat'
@@ -609,6 +610,14 @@ project('spring-xd-yarn:spring-xd-yarn-appmaster') {
 								"org.slf4j:slf4j-log4j12"
 		}
 		compile "org.springframework.boot:spring-boot-autoconfigure"
+		compile("org.springframework.boot:spring-boot-starter-web") {
+			exclude group:'ch.qos.logback'
+			exclude group: 'org.slf4j'
+		}
+		compile("org.springframework.boot:spring-boot-starter-actuator") {
+			exclude group:'ch.qos.logback'
+			exclude group: 'org.slf4j'
+		}
 	}
 
 	jar {
