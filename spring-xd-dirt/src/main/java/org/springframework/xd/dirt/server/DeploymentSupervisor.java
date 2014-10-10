@@ -33,13 +33,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.boot.context.embedded.EmbeddedServletContainerInitializedEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.ContextStoppedEvent;
 import org.springframework.util.Assert;
+import org.springframework.xd.dirt.cluster.Container;
+import org.springframework.xd.dirt.cluster.ContainerAttributes;
 import org.springframework.xd.dirt.cluster.ContainerMatcher;
+import org.springframework.xd.dirt.container.store.AdminRepository;
 import org.springframework.xd.dirt.container.store.ContainerRepository;
 import org.springframework.xd.dirt.job.JobFactory;
 import org.springframework.xd.dirt.module.ModuleDefinitionRepository;
@@ -80,6 +84,16 @@ public class DeploymentSupervisor implements ApplicationListener<ApplicationEven
 	 * Repository to load the containers.
 	 */
 	private final ContainerRepository containerRepository;
+
+	/**
+	 * Repository to load the admins.
+	 */
+	private final AdminRepository adminRepository;
+
+	/**
+	 * Attributes for admin stored in admin repository.
+	 */
+	private final ContainerAttributes adminAttributes;
 
 	/**
 	 * Repository to load stream definitions.
@@ -144,6 +158,11 @@ public class DeploymentSupervisor implements ApplicationListener<ApplicationEven
 	private final DeploymentUnitStateCalculator stateCalculator;
 
 	/**
+	 * Namespace for management context in the container's application context.
+	 */
+	private final static String MGMT_CONTEXT_NAMESPACE = "management";
+
+	/**
 	 * Construct a {@code DeploymentSupervisor}.
 	 *
 	 * @param zkConnection ZooKeeper connection
@@ -157,6 +176,8 @@ public class DeploymentSupervisor implements ApplicationListener<ApplicationEven
 	 */
 	public DeploymentSupervisor(ZooKeeperConnection zkConnection,
 			ContainerRepository containerRepository,
+			AdminRepository adminRepository,
+			ContainerAttributes adminAttributes,
 			StreamDefinitionRepository streamDefinitionRepository,
 			JobDefinitionRepository jobDefinitionRepository,
 			ModuleDefinitionRepository moduleDefinitionRepository,
@@ -165,6 +186,8 @@ public class DeploymentSupervisor implements ApplicationListener<ApplicationEven
 			DeploymentUnitStateCalculator stateCalculator) {
 		Assert.notNull(zkConnection, "ZooKeeperConnection must not be null");
 		Assert.notNull(containerRepository, "ContainerRepository must not be null");
+		Assert.notNull(adminRepository, "AdminRepository must not be null");
+		Assert.notNull(adminAttributes, "Admin attributes must not be null");
 		Assert.notNull(streamDefinitionRepository, "StreamDefinitionRepository must not be null");
 		Assert.notNull(moduleDefinitionRepository, "ModuleDefinitionRepository must not be null");
 		Assert.notNull(moduleOptionsMetadataResolver, "moduleOptionsMetadataResolver must not be null");
@@ -172,6 +195,8 @@ public class DeploymentSupervisor implements ApplicationListener<ApplicationEven
 		Assert.notNull(stateCalculator, "stateCalculator must not be null");
 		this.zkConnection = zkConnection;
 		this.containerRepository = containerRepository;
+		this.adminRepository = adminRepository;
+		this.adminAttributes = adminAttributes;
 		this.streamDefinitionRepository = streamDefinitionRepository;
 		this.jobDefinitionRepository = jobDefinitionRepository;
 		this.moduleDefinitionRepository = moduleDefinitionRepository;
@@ -195,6 +220,14 @@ public class DeploymentSupervisor implements ApplicationListener<ApplicationEven
 		else if (event instanceof ContextStoppedEvent) {
 			if (this.leaderSelector != null) {
 				this.leaderSelector.close();
+			}
+		}
+		else if (event instanceof EmbeddedServletContainerInitializedEvent) {
+			String namespace = ((EmbeddedServletContainerInitializedEvent) event).getApplicationContext().getNamespace();
+			int port = ((EmbeddedServletContainerInitializedEvent) event).getEmbeddedServletContainer().getPort();
+			if (!MGMT_CONTEXT_NAMESPACE.equals(namespace)) {
+				adminAttributes.put("port", Integer.toString(port));
+				adminRepository.save(new Container(adminAttributes.getId(), adminAttributes));
 			}
 		}
 	}
@@ -225,7 +258,7 @@ public class DeploymentSupervisor implements ApplicationListener<ApplicationEven
 			Paths.ensurePath(client, Paths.JOBS);
 
 			if (leaderSelector == null) {
-				leaderSelector = new LeaderSelector(client, Paths.build(Paths.ADMINS), leaderListener);
+				leaderSelector = new LeaderSelector(client, Paths.build(Paths.ADMINELECTION), leaderListener);
 				leaderSelector.setId(getId());
 				leaderSelector.start();
 			}
