@@ -51,13 +51,13 @@ import org.springframework.xd.rest.domain.metrics.RichGaugeResource;
  * <li>Resets a {@link RestTemplate}'s message converters list to have json support come <em>before</em> xml.</li>
  * <li>Force injects JAXBContexts that know about our particular classes</li>
  * </ol>
- * 
+ *
  * <p>
  * The second item is necessary when marshalling (on the server) instances of <i>e.g.</i> {@link PagedResources} because
  * of type erasure. This hack can be worked around when un-marshalling (on the client) with use of constructs like
  * {@link org.springframework.xd.rest.domain.StreamDefinitionResource.Page}.
  * </p>
- * 
+ *
  * @author Eric Bottard
  */
 public class RestTemplateMessageConverterUtil {
@@ -95,10 +95,10 @@ public class RestTemplateMessageConverterUtil {
 		if (jackson2Present) {
 			messageConverters.add(new MappingJackson2HttpMessageConverter());
 		}
-		else if (jacksonPresent) {
-			// avoiding import of MappingJacksonHttpMessageConverter to prevent deprecation warning
-			messageConverters.add(new org.springframework.http.converter.json.MappingJacksonHttpMessageConverter());
-		}
+//		else if (jacksonPresent) {
+//			// avoiding import of MappingJacksonHttpMessageConverter to prevent deprecation warning
+//			messageConverters.add(new org.springframework.http.converter.json.MappingJacksonHttpMessageConverter());
+//		}
 		if (jaxb2Present) {
 			Jaxb2RootElementHttpMessageConverter jaxbConverter = new Jaxb2RootElementHttpMessageConverter();
 			initializeJAXBContexts(jaxbConverter);
