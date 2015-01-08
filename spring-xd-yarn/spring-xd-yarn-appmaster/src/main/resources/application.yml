@@ -26,7 +26,7 @@ spring:
                             virtualCores: 1
                         launchcontext:
                             runnerClass: org.springframework.xd.dirt.server.AdminServerApplication
-                            locality: false
+                            locality: "${xd.adminLocality:false}"
                             useYarnAppClasspath: true
                             useMapreduceAppClasspath: true
                             arguments:
@@ -50,7 +50,7 @@ spring:
                             virtualCores: 1
                         launchcontext:
                             runnerClass: org.springframework.xd.dirt.server.ContainerServerApplication
-                            locality: false
+                            locality: "${xd.containerLocality:false}"
                             useYarnAppClasspath: true
                             useMapreduceAppClasspath: true
                             arguments:

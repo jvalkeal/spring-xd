@@ -79,5 +79,10 @@ public class ClientApplication extends AbstractCli {
 		
 		app.doMain(args);
 	}
+	
+	@Override
+	protected String getMainCommandName() {
+		return "xd-yarn";
+	}
 
 }
