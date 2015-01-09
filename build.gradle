@@ -66,6 +66,7 @@ allprojects {
 	group = 'org.springframework.xd'
 
 	repositories {
+		mavenLocal()
 		mavenCentral()
 		maven { url 'http://repo.spring.io/libs-snapshot' }
 		maven { url 'http://repo.spring.io/milestone' }
@@ -653,7 +654,7 @@ project('spring-xd-yarn:spring-xd-yarn-client') {
 		compile "org.springframework:spring-jdbc"
 		compile "org.springframework:spring-tx"
 		compile "org.springframework.batch:spring-batch-core"
-		compile("org.springframework.data:spring-yarn-boot") {
+		compile("org.springframework.data:spring-yarn-boot-cli") {
 			exclude group: 'javax.servlet', module: 'servlet-api'
 			exclude group: 'javax.servlet.jsp', module: 'jsp-api'
 			exclude group: 'tomcat', module: 'jasper-runtime'
@@ -726,6 +727,14 @@ project('spring-xd-yarn:spring-xd-yarn-appmaster') {
 				"org.slf4j:slf4j-log4j12"
 
 		compile "org.springframework.boot:spring-boot-autoconfigure"
+		compile("org.springframework.boot:spring-boot-starter-web") {
+			exclude group:'ch.qos.logback'
+			exclude group: 'org.slf4j'
+		}
+		compile("org.springframework.boot:spring-boot-starter-actuator") {
+			exclude group:'ch.qos.logback'
+			exclude group: 'org.slf4j'
+		}
 	}
 
 	jar {
