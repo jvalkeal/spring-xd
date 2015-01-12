@@ -727,14 +727,9 @@ project('spring-xd-yarn:spring-xd-yarn-appmaster') {
 				"org.slf4j:slf4j-log4j12"
 
 		compile "org.springframework.boot:spring-boot-autoconfigure"
-		compile("org.springframework.boot:spring-boot-starter-web") {
-			exclude group:'ch.qos.logback'
-			exclude group: 'org.slf4j'
-		}
-		compile("org.springframework.boot:spring-boot-starter-actuator") {
-			exclude group:'ch.qos.logback'
-			exclude group: 'org.slf4j'
-		}
+		compile "org.springframework.boot:spring-boot-actuator"
+		compile "org.springframework:spring-webmvc"
+		compile "org.springframework.boot:spring-boot-starter-tomcat"
 	}
 
 	jar {
