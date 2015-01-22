@@ -45,9 +45,10 @@ public class ClientApplication extends AbstractCli {
 
 	public static void main(String... args) {
 		ClientApplication app = new ClientApplication();
-		
+
 		// command-line commands
 		List<Command> cmdCommands = new ArrayList<Command>();
+		cmdCommands.add(new XdYarnFooCommand());
 		cmdCommands.add(new YarnPushCommand());
 		cmdCommands.add(new YarnPushedCommand());
 		cmdCommands.add(new YarnSubmitCommand());
@@ -59,11 +60,12 @@ public class ClientApplication extends AbstractCli {
 		cmdCommands.add(new YarnClusterStartCommand());
 		cmdCommands.add(new YarnClusterStopCommand());
 		cmdCommands.add(new YarnClusterModifyCommand());
-		cmdCommands.add(new YarnClusterDestroyCommand());		
+		cmdCommands.add(new YarnClusterDestroyCommand());
 		app.registerCommands(cmdCommands);
 
 		// shell commands, push not supported in shell
 		List<Command> shellCommands = new ArrayList<Command>();
+		shellCommands.add(new XdYarnFooCommand());
 		shellCommands.add(new YarnPushedCommand());
 		shellCommands.add(new YarnSubmitCommand());
 		shellCommands.add(new YarnSubmittedCommand(new SubmittedOptionHandler("XD")));
@@ -74,12 +76,12 @@ public class ClientApplication extends AbstractCli {
 		shellCommands.add(new YarnClusterStartCommand());
 		shellCommands.add(new YarnClusterStopCommand());
 		shellCommands.add(new YarnClusterModifyCommand());
-		shellCommands.add(new YarnClusterDestroyCommand());		
+		shellCommands.add(new YarnClusterDestroyCommand());
 		app.registerCommand(new ShellCommand(shellCommands));
-		
+
 		app.doMain(args);
 	}
-	
+
 	@Override
 	protected String getMainCommandName() {
 		return "xd-yarn";
